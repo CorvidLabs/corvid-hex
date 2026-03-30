@@ -441,4 +441,195 @@ mod tests {
         incremental_search(&mut app);
         assert_eq!(app.search_results, vec![0, 6]);
     }
+
+    #[test]
+    fn parse_search_flags_strips_suffix() {
+        let (pat, ci) = parse_search_flags("hello/i");
+        assert_eq!(pat, "hello");
+        assert!(ci);
+    }
+
+    #[test]
+    fn parse_search_flags_no_flag() {
+        let (pat, ci) = parse_search_flags("hello");
+        assert_eq!(pat, "hello");
+        assert!(!ci);
+    }
+
+    #[test]
+    fn execute_search_hex_pattern() {
+        use std::io::Write;
+        let mut tmp = tempfile::NamedTempFile::new().unwrap();
+        tmp.write_all(&[0xDE, 0xAD, 0x00, 0xDE, 0xAD]).unwrap();
+        let mut app = App::open(tmp.path().to_str().unwrap()).unwrap();
+
+        app.search_input = "0xDEAD".to_string();
+        execute_search(&mut app);
+
+        assert_eq!(app.search_results, vec![0, 3]);
+        assert_eq!(app.search_pattern_len, 2);
+    }
+
+    #[test]
+    fn execute_search_invalid_pattern() {
+        use std::io::Write;
+        let mut tmp = tempfile::NamedTempFile::new().unwrap();
+        tmp.write_all(b"data").unwrap();
+        let mut app = App::open(tmp.path().to_str().unwrap()).unwrap();
+
+        app.search_input = "0xGG".to_string();
+        execute_search(&mut app);
+
+        assert!(app.search_results.is_empty());
+        assert!(app.status_message.as_ref().unwrap().contains("Invalid"));
+    }
+
+    #[test]
+    fn execute_search_jumps_to_first_after_cursor() {
+        use std::io::Write;
+        let mut tmp = tempfile::NamedTempFile::new().unwrap();
+        tmp.write_all(b"ABCABC").unwrap();
+        let mut app = App::open(tmp.path().to_str().unwrap()).unwrap();
+        app.cursor = 2; // past first "A"
+
+        app.search_input = "A".to_string();
+        execute_search(&mut app);
+
+        assert_eq!(app.search_results, vec![0, 3]);
+        // Should jump to the match at 3, not 0
+        assert_eq!(app.search_index, 1);
+        assert_eq!(app.cursor, 3);
+    }
+
+    #[test]
+    fn execute_search_wraps_to_first_when_cursor_past_all() {
+        use std::io::Write;
+        let mut tmp = tempfile::NamedTempFile::new().unwrap();
+        tmp.write_all(b"AB..").unwrap();
+        let mut app = App::open(tmp.path().to_str().unwrap()).unwrap();
+        app.cursor = 3; // past all matches
+
+        app.search_input = "AB".to_string();
+        execute_search(&mut app);
+
+        assert_eq!(app.search_results, vec![0]);
+        assert_eq!(app.search_index, 0);
+        assert_eq!(app.cursor, 0);
+    }
+
+    #[test]
+    fn next_prev_on_empty_results_is_noop() {
+        use std::io::Write;
+        let mut tmp = tempfile::NamedTempFile::new().unwrap();
+        tmp.write_all(b"data").unwrap();
+        let mut app = App::open(tmp.path().to_str().unwrap()).unwrap();
+
+        next_search_result(&mut app);
+        assert_eq!(app.cursor, 0);
+
+        prev_search_result(&mut app);
+        assert_eq!(app.cursor, 0);
+    }
+
+    #[test]
+    fn next_wraps_around() {
+        use std::io::Write;
+        let mut tmp = tempfile::NamedTempFile::new().unwrap();
+        tmp.write_all(b"ABA").unwrap();
+        let mut app = App::open(tmp.path().to_str().unwrap()).unwrap();
+
+        app.search_input = "A".to_string();
+        execute_search(&mut app);
+        assert_eq!(app.search_results, vec![0, 2]);
+
+        next_search_result(&mut app);
+        assert_eq!(app.cursor, 2);
+
+        // Wrap around
+        next_search_result(&mut app);
+        assert_eq!(app.cursor, 0);
+    }
+
+    #[test]
+    fn incremental_search_invalid_hex_clears() {
+        use std::io::Write;
+        let mut tmp = tempfile::NamedTempFile::new().unwrap();
+        tmp.write_all(b"data").unwrap();
+        let mut app = App::open(tmp.path().to_str().unwrap()).unwrap();
+
+        app.search_input = "0xGG".to_string();
+        incremental_search(&mut app);
+        assert!(app.search_results.is_empty());
+        assert_eq!(app.search_pattern_len, 0);
+    }
+
+    #[test]
+    fn incremental_search_nearest_match_after_cursor() {
+        use std::io::Write;
+        let mut tmp = tempfile::NamedTempFile::new().unwrap();
+        tmp.write_all(b"AXBXCX").unwrap();
+        let mut app = App::open(tmp.path().to_str().unwrap()).unwrap();
+        app.cursor = 3; // between second and third X
+
+        app.search_input = "X".to_string();
+        incremental_search(&mut app);
+        assert_eq!(app.search_results, vec![1, 3, 5]);
+        // Nearest at-or-after cursor=3 is index 1 (offset 3)
+        assert_eq!(app.search_index, 1);
+    }
+
+    #[test]
+    fn replace_invalid_find_pattern() {
+        use std::io::Write;
+        let mut tmp = tempfile::NamedTempFile::new().unwrap();
+        tmp.write_all(b"data").unwrap();
+        let mut app = App::open(tmp.path().to_str().unwrap()).unwrap();
+
+        execute_replace(&mut app, "0xGG", "0xFF");
+        assert!(app.status_message.as_ref().unwrap().contains("Invalid find"));
+    }
+
+    #[test]
+    fn replace_invalid_replace_pattern() {
+        use std::io::Write;
+        let mut tmp = tempfile::NamedTempFile::new().unwrap();
+        tmp.write_all(b"data").unwrap();
+        let mut app = App::open(tmp.path().to_str().unwrap()).unwrap();
+
+        execute_replace(&mut app, "0xFF", "0xGG");
+        assert!(app.status_message.as_ref().unwrap().contains("Invalid replace"));
+    }
+
+    #[test]
+    fn find_all_empty_buffer() {
+        use std::io::Write;
+        let mut tmp = tempfile::NamedTempFile::new().unwrap();
+        tmp.write_all(b"").unwrap();
+        let app = App::open(tmp.path().to_str().unwrap()).unwrap();
+
+        let results = find_all(&app, b"x", false);
+        assert!(results.is_empty());
+    }
+
+    #[test]
+    fn find_all_empty_pattern() {
+        use std::io::Write;
+        let mut tmp = tempfile::NamedTempFile::new().unwrap();
+        tmp.write_all(b"data").unwrap();
+        let app = App::open(tmp.path().to_str().unwrap()).unwrap();
+
+        let results = find_all(&app, b"", false);
+        assert!(results.is_empty());
+    }
+
+    #[test]
+    fn case_insensitive_find_all() {
+        use std::io::Write;
+        let mut tmp = tempfile::NamedTempFile::new().unwrap();
+        tmp.write_all(b"aAbBaA").unwrap();
+        let app = App::open(tmp.path().to_str().unwrap()).unwrap();
+
+        let results = find_all(&app, b"aa", true);
+        assert_eq!(results, vec![0, 4]);
+    }
 }

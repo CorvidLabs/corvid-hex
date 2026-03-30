@@ -484,6 +484,62 @@ mod tests {
     }
 
     #[test]
+    fn execute_command_cols_alias() {
+        let mut app = make_app(&vec![0u8; 256]);
+        app.command_input = "cols 8".to_string();
+        app.execute_command();
+        assert_eq!(app.bytes_per_row, 8);
+    }
+
+    #[test]
+    fn execute_command_replace_bad_syntax() {
+        let mut app = make_app(b"test");
+        app.command_input = "s/nodelimiter".to_string();
+        app.execute_command();
+        assert!(app.status_message.as_ref().unwrap().contains("Usage"));
+    }
+
+    #[test]
+    fn execute_command_goto_invalid_address() {
+        let mut app = make_app(b"test");
+        app.command_input = "goto ZZZZ".to_string();
+        app.execute_command();
+        assert!(app.status_message.as_ref().unwrap().contains("Invalid address"));
+    }
+
+    #[test]
+    fn empty_buffer_move_cursor() {
+        let app = make_app(b"");
+        assert_eq!(app.cursor, 0);
+        assert_eq!(app.buffer.len(), 0);
+    }
+
+    #[test]
+    fn selection_range_reverse() {
+        let mut app = make_app(b"ABCDEF");
+        app.selection_anchor = Some(4);
+        app.cursor = 1;
+        // Should normalize to (1, 4) regardless of direction
+        assert_eq!(app.selection_range(), Some((1, 4)));
+    }
+
+    #[test]
+    fn yank_no_selection() {
+        let mut app = make_app(b"test");
+        assert_eq!(app.yank_selection(), 0);
+    }
+
+    #[test]
+    fn paste_beyond_buffer_end() {
+        let mut app = make_app(b"AB");
+        app.clipboard = vec![b'X', b'Y', b'Z', b'W']; // 4 bytes, buffer only 2
+        app.cursor = 1;
+        let count = app.paste();
+        assert_eq!(count, 4); // reports clipboard size
+        assert_eq!(app.buffer.get(1), Some(b'X')); // only first byte fits within bounds
+    }
+
+    #[test]
     fn execute_command_marks_lists() {
         let mut app = make_app(&vec![0u8; 256]);
         app.bookmarks.insert('a', 0x10);

@@ -638,6 +638,119 @@ mod tests {
     }
 
     #[test]
+    fn search_mode_esc_clears_results() {
+        let mut app = make_app(b"hello world");
+        app.mode = Mode::Search;
+        handle_key(&mut app, key(KeyCode::Char('h')));
+        assert!(!app.search_results.is_empty()); // incremental found 'h'
+        handle_key(&mut app, key(KeyCode::Esc));
+        assert_eq!(app.mode, Mode::Normal);
+        assert!(app.search_input.is_empty());
+        assert!(app.search_results.is_empty());
+        assert_eq!(app.search_pattern_len, 0);
+    }
+
+    #[test]
+    fn search_mode_backspace_to_empty_exits() {
+        let mut app = make_app(b"test");
+        app.mode = Mode::Search;
+        handle_key(&mut app, key(KeyCode::Char('t')));
+        assert_eq!(app.mode, Mode::Search);
+        handle_key(&mut app, key(KeyCode::Backspace));
+        assert_eq!(app.mode, Mode::Normal);
+        assert!(app.search_results.is_empty());
+    }
+
+    #[test]
+    fn search_mode_backspace_triggers_incremental() {
+        let mut app = make_app(b"test data test");
+        app.mode = Mode::Search;
+        handle_key(&mut app, key(KeyCode::Char('t')));
+        handle_key(&mut app, key(KeyCode::Char('e')));
+        handle_key(&mut app, key(KeyCode::Char('s')));
+        handle_key(&mut app, key(KeyCode::Char('t')));
+        let count_4 = app.search_results.len();
+        // Backspace to "tes" — should re-search incrementally
+        handle_key(&mut app, key(KeyCode::Backspace));
+        assert_eq!(app.search_input, "tes");
+        assert_eq!(app.mode, Mode::Search);
+        assert!(app.search_results.len() >= count_4);
+    }
+
+    #[test]
+    fn normal_n_navigates_search_results() {
+        let mut app = make_app(b"ABAB");
+        // First do a search
+        app.mode = Mode::Search;
+        handle_key(&mut app, key(KeyCode::Char('A')));
+        handle_key(&mut app, key(KeyCode::Enter));
+        assert_eq!(app.mode, Mode::Normal);
+        assert_eq!(app.search_results, vec![0, 2]);
+        assert_eq!(app.cursor, 0);
+
+        // n → next match
+        handle_key(&mut app, key(KeyCode::Char('n')));
+        assert_eq!(app.cursor, 2);
+
+        // N → previous match
+        handle_key(&mut app, key(KeyCode::Char('N')));
+        assert_eq!(app.cursor, 0);
+    }
+
+    #[test]
+    fn normal_home_end_navigation() {
+        let mut app = make_app(&vec![0u8; 256]);
+        app.cursor = 5;
+        // 0 → start of row
+        handle_key(&mut app, key(KeyCode::Char('0')));
+        assert_eq!(app.cursor, 0);
+        // $ → end of row
+        handle_key(&mut app, key(KeyCode::Char('$')));
+        assert_eq!(app.cursor, 15);
+    }
+
+    #[test]
+    fn edit_hex_arrow_keys_clear_nibble() {
+        let mut app = make_app(b"\x00\x00");
+        app.mode = Mode::EditHex;
+        // Type first nibble
+        handle_key(&mut app, key(KeyCode::Char('A')));
+        assert!(app.hex_nibble.is_some());
+        // Arrow clears nibble and moves
+        handle_key(&mut app, key(KeyCode::Right));
+        assert!(app.hex_nibble.is_none());
+        assert_eq!(app.cursor, 1);
+    }
+
+    #[test]
+    fn visual_mode_home_end_g_G() {
+        let mut app = make_app(&vec![0u8; 256]);
+        app.cursor = 5;
+        handle_key(&mut app, key(KeyCode::Char('v')));
+        assert_eq!(app.mode, Mode::Visual);
+
+        // Home-equivalent: 0
+        handle_key(&mut app, key(KeyCode::Char('0')));
+        assert_eq!(app.cursor, 0);
+
+        // End-equivalent: $
+        handle_key(&mut app, key(KeyCode::Char('$')));
+        assert_eq!(app.cursor, 15);
+
+        // g → beginning of file
+        handle_key(&mut app, key(KeyCode::Char('g')));
+        assert_eq!(app.cursor, 0);
+
+        // G → end of file
+        handle_key(&mut app, key(KeyCode::Char('G')));
+        assert_eq!(app.cursor, 255);
+
+        // Still in visual mode with anchor
+        assert_eq!(app.mode, Mode::Visual);
+        assert!(app.selection_anchor.is_some());
+    }
+
+    #[test]
     fn multiple_bookmarks() {
         let mut app = make_app(&vec![0u8; 256]);
         // Set bookmark 'a' at 0x10
