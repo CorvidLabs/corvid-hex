@@ -1,0 +1,58 @@
+mod app;
+mod buffer;
+mod input;
+mod render;
+mod search;
+
+use anyhow::Result;
+use app::App;
+use clap::Parser;
+use crossterm::{
+    event::{self, Event, KeyEventKind},
+    execute,
+    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
+};
+use ratatui::prelude::*;
+use std::io;
+
+#[derive(Parser)]
+#[command(name = "chx", about = "A TUI hex editor")]
+struct Cli {
+    /// File to open
+    file: String,
+}
+
+fn main() -> Result<()> {
+    let cli = Cli::parse();
+    let mut app = App::open(&cli.file)?;
+
+    enable_raw_mode()?;
+    let mut stdout = io::stdout();
+    execute!(stdout, EnterAlternateScreen)?;
+    let backend = CrosstermBackend::new(stdout);
+    let mut terminal = Terminal::new(backend)?;
+
+    let result = run(&mut terminal, &mut app);
+
+    disable_raw_mode()?;
+    execute!(terminal.backend_mut(), LeaveAlternateScreen)?;
+    terminal.show_cursor()?;
+
+    result
+}
+
+fn run(terminal: &mut Terminal<CrosstermBackend<io::Stdout>>, app: &mut App) -> Result<()> {
+    loop {
+        terminal.draw(|f| render::draw(f, app))?;
+
+        if let Event::Key(key) = event::read()? {
+            if key.kind != KeyEventKind::Press {
+                continue;
+            }
+            if input::handle_key(app, key) {
+                break;
+            }
+        }
+    }
+    Ok(())
+}
