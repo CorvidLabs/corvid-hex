@@ -10,6 +10,8 @@ const COLOR_CURSOR: Color = Color::Black;
 const COLOR_CURSOR_BG: Color = Color::White;
 const COLOR_SEARCH_HIT: Color = Color::Black;
 const COLOR_SEARCH_BG: Color = Color::Yellow;
+const COLOR_CURRENT_MATCH_BG: Color = Color::Magenta;
+const COLOR_SELECTION_BG: Color = Color::Blue;
 
 fn byte_color(b: u8, modified: bool) -> Color {
     if modified {
@@ -74,6 +76,14 @@ fn draw_hex_view(f: &mut Frame, app: &App, area: Rect) {
 
     // Build search hit set for quick lookup
     let search_hits: std::collections::HashSet<usize> = app.search_results.iter().copied().collect();
+    // Current match offset (for highlighting the active match differently)
+    let current_match: Option<usize> = if !app.search_results.is_empty() {
+        Some(app.search_results[app.search_index])
+    } else {
+        None
+    };
+    // Selection range
+    let selection = app.selection_range();
 
     for row_idx in 0..rows {
         let data_row = app.scroll_offset + row_idx;
@@ -106,6 +116,8 @@ fn draw_hex_view(f: &mut Frame, app: &App, area: Rect) {
                 let modified = app.buffer.is_modified(offset);
                 let is_cursor = offset == app.cursor;
                 let is_search = search_hits.contains(&offset);
+                let is_current_match = current_match == Some(offset);
+                let is_selected = selection.is_some_and(|(lo, hi)| offset >= lo && offset <= hi);
 
                 let hex = format!("{:02X}", byte);
 
@@ -119,6 +131,10 @@ fn draw_hex_view(f: &mut Frame, app: &App, area: Rect) {
                             .fg(COLOR_CURSOR)
                             .bg(COLOR_CURSOR_BG),
                     }
+                } else if is_selected {
+                    Style::default().fg(Color::White).bg(COLOR_SELECTION_BG)
+                } else if is_current_match {
+                    Style::default().fg(COLOR_SEARCH_HIT).bg(COLOR_CURRENT_MATCH_BG).add_modifier(Modifier::BOLD)
                 } else if is_search {
                     Style::default().fg(COLOR_SEARCH_HIT).bg(COLOR_SEARCH_BG)
                 } else {
@@ -148,6 +164,8 @@ fn draw_hex_view(f: &mut Frame, app: &App, area: Rect) {
                 let modified = app.buffer.is_modified(offset);
                 let is_cursor = offset == app.cursor;
                 let is_search = search_hits.contains(&offset);
+                let is_current_match = current_match == Some(offset);
+                let is_selected = selection.is_some_and(|(lo, hi)| offset >= lo && offset <= hi);
                 let ch = ascii_char(byte).to_string();
 
                 let style = if is_cursor {
@@ -160,6 +178,10 @@ fn draw_hex_view(f: &mut Frame, app: &App, area: Rect) {
                             .fg(COLOR_CURSOR)
                             .bg(COLOR_CURSOR_BG),
                     }
+                } else if is_selected {
+                    Style::default().fg(Color::White).bg(COLOR_SELECTION_BG)
+                } else if is_current_match {
+                    Style::default().fg(COLOR_SEARCH_HIT).bg(COLOR_CURRENT_MATCH_BG).add_modifier(Modifier::BOLD)
                 } else if is_search {
                     Style::default().fg(COLOR_SEARCH_HIT).bg(COLOR_SEARCH_BG)
                 } else {
@@ -184,6 +206,7 @@ fn draw_hex_view(f: &mut Frame, app: &App, area: Rect) {
 fn draw_status_bar(f: &mut Frame, app: &App, area: Rect) {
     let mode_style = match app.mode {
         Mode::Normal => Style::default().fg(Color::Black).bg(Color::Blue),
+        Mode::Visual => Style::default().fg(Color::Black).bg(Color::Yellow),
         Mode::EditHex | Mode::EditAscii => Style::default().fg(Color::Black).bg(Color::Green),
         Mode::Command | Mode::Search => Style::default().fg(Color::Black).bg(Color::Magenta),
     };

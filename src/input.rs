@@ -6,6 +6,7 @@ use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 pub fn handle_key(app: &mut App, key: KeyEvent) -> bool {
     match app.mode {
         Mode::Normal => handle_normal(app, key),
+        Mode::Visual => handle_visual(app, key),
         Mode::EditHex => handle_edit_hex(app, key),
         Mode::EditAscii => handle_edit_ascii(app, key),
         Mode::Command => handle_command(app, key),
@@ -15,6 +16,33 @@ pub fn handle_key(app: &mut App, key: KeyEvent) -> bool {
 
 fn handle_normal(app: &mut App, key: KeyEvent) -> bool {
     app.status_message = None;
+
+    // Handle pending bookmark operations (m + letter, ' + letter)
+    if let Some(pending) = app.pending_bookmark.take() {
+        if let KeyCode::Char(c) = key.code {
+            if c.is_ascii_lowercase() {
+                match pending {
+                    'm' => {
+                        app.bookmarks.insert(c, app.cursor);
+                        app.status_message = Some(format!("Bookmark '{c}' set at 0x{:X}", app.cursor));
+                    }
+                    '\'' => {
+                        if let Some(&offset) = app.bookmarks.get(&c) {
+                            app.move_cursor_to(offset);
+                            app.status_message = Some(format!("Jumped to bookmark '{c}'"));
+                        } else {
+                            app.status_message = Some(format!("Bookmark '{c}' not set"));
+                        }
+                    }
+                    _ => {}
+                }
+                return false;
+            }
+        }
+        // Invalid key after m/' — cancel silently
+        app.status_message = Some("Bookmark cancelled".to_string());
+        return false;
+    }
 
     match key.code {
         // Quit
@@ -80,9 +108,93 @@ fn handle_normal(app: &mut App, key: KeyEvent) -> bool {
             app.move_cursor(-(half as isize));
         }
 
+        // Undo/Redo
+        KeyCode::Char('u') => {
+            if let Some(offset) = app.buffer.undo() {
+                app.move_cursor_to(offset);
+                app.status_message = Some("Undo".to_string());
+            } else {
+                app.status_message = Some("Nothing to undo".to_string());
+            }
+        }
+        KeyCode::Char('r') if key.modifiers.contains(KeyModifiers::CONTROL) => {
+            if let Some(offset) = app.buffer.redo() {
+                app.move_cursor_to(offset);
+                app.status_message = Some("Redo".to_string());
+            } else {
+                app.status_message = Some("Nothing to redo".to_string());
+            }
+        }
+
+        // Visual mode
+        KeyCode::Char('v') => {
+            app.mode = Mode::Visual;
+            app.selection_anchor = Some(app.cursor);
+        }
+
+        // Paste
+        KeyCode::Char('p') => {
+            if app.clipboard.is_empty() {
+                app.status_message = Some("Nothing to paste".to_string());
+            } else {
+                let count = app.paste();
+                app.status_message = Some(format!("Pasted {count} bytes"));
+            }
+        }
+
         // Search navigation
         KeyCode::Char('n') => search::next_search_result(app),
         KeyCode::Char('N') => search::prev_search_result(app),
+
+        // Bookmarks
+        KeyCode::Char('m') => {
+            app.pending_bookmark = Some('m');
+        }
+        KeyCode::Char('\'') => {
+            app.pending_bookmark = Some('\'');
+        }
+
+        _ => {}
+    }
+    false
+}
+
+fn handle_visual(app: &mut App, key: KeyEvent) -> bool {
+    app.status_message = None;
+
+    match key.code {
+        KeyCode::Esc => {
+            app.mode = Mode::Normal;
+            app.selection_anchor = None;
+        }
+
+        // Navigation extends selection
+        KeyCode::Char('h') | KeyCode::Left => app.move_cursor(-1),
+        KeyCode::Char('l') | KeyCode::Right => app.move_cursor(1),
+        KeyCode::Char('k') | KeyCode::Up => app.move_cursor(-(app.bytes_per_row as isize)),
+        KeyCode::Char('j') | KeyCode::Down => app.move_cursor(app.bytes_per_row as isize),
+
+        KeyCode::Home | KeyCode::Char('0') => {
+            let row_start = (app.cursor / app.bytes_per_row) * app.bytes_per_row;
+            app.move_cursor_to(row_start);
+        }
+        KeyCode::End | KeyCode::Char('$') => {
+            let row_end = ((app.cursor / app.bytes_per_row) + 1) * app.bytes_per_row - 1;
+            app.move_cursor_to(row_end);
+        }
+        KeyCode::Char('g') => app.move_cursor_to(0),
+        KeyCode::Char('G') => {
+            if !app.buffer.is_empty() {
+                app.move_cursor_to(app.buffer.len() - 1);
+            }
+        }
+
+        // Yank
+        KeyCode::Char('y') => {
+            let count = app.yank_selection();
+            app.mode = Mode::Normal;
+            app.status_message = Some(format!("Yanked {count} bytes"));
+        }
 
         _ => {}
     }
@@ -96,7 +208,7 @@ fn handle_edit_hex(app: &mut App, key: KeyEvent) -> bool {
             app.hex_nibble = None;
         }
         KeyCode::Char(c) if c.is_ascii_hexdigit() => {
-            let nibble = u8::from_str_radix(&c.to_string(), 16).unwrap();
+            let Some(nibble) = c.to_digit(16).map(|d| d as u8) else { return false; };
             if let Some(high) = app.hex_nibble {
                 // Second nibble — write the byte
                 let value = (high << 4) | nibble;
@@ -384,5 +496,163 @@ mod tests {
         app.visible_rows = 10;
         handle_key(&mut app, key_ctrl(KeyCode::Char('d')));
         assert_eq!(app.cursor, 5 * 16); // half of 10 rows
+    }
+
+    #[test]
+    fn undo_in_normal_mode() {
+        let mut app = make_app(b"\x00\x00");
+        // Edit a byte
+        app.mode = Mode::EditHex;
+        handle_key(&mut app, key(KeyCode::Char('F')));
+        handle_key(&mut app, key(KeyCode::Char('F')));
+        assert_eq!(app.buffer.get(0), Some(0xFF));
+
+        // Undo in normal mode
+        app.mode = Mode::Normal;
+        handle_key(&mut app, key(KeyCode::Char('u')));
+        assert_eq!(app.buffer.get(0), Some(0x00));
+        assert_eq!(app.cursor, 0);
+    }
+
+    #[test]
+    fn redo_in_normal_mode() {
+        let mut app = make_app(b"\x00\x00");
+        app.mode = Mode::EditHex;
+        handle_key(&mut app, key(KeyCode::Char('A')));
+        handle_key(&mut app, key(KeyCode::Char('B')));
+        assert_eq!(app.buffer.get(0), Some(0xAB));
+
+        app.mode = Mode::Normal;
+        handle_key(&mut app, key(KeyCode::Char('u')));
+        assert_eq!(app.buffer.get(0), Some(0x00));
+
+        handle_key(&mut app, key_ctrl(KeyCode::Char('r')));
+        assert_eq!(app.buffer.get(0), Some(0xAB));
+    }
+
+    #[test]
+    fn undo_nothing_shows_message() {
+        let mut app = make_app(b"test");
+        handle_key(&mut app, key(KeyCode::Char('u')));
+        assert!(app.status_message.as_ref().unwrap().contains("Nothing to undo"));
+    }
+
+    #[test]
+    fn enter_visual_mode() {
+        let mut app = make_app(b"ABCDEF");
+        app.cursor = 2;
+        handle_key(&mut app, key(KeyCode::Char('v')));
+        assert_eq!(app.mode, Mode::Visual);
+        assert_eq!(app.selection_anchor, Some(2));
+    }
+
+    #[test]
+    fn visual_mode_navigate_and_yank() {
+        let mut app = make_app(b"ABCDEF");
+        app.cursor = 1;
+        // Enter visual mode
+        handle_key(&mut app, key(KeyCode::Char('v')));
+        assert_eq!(app.mode, Mode::Visual);
+        // Extend selection right 2 times
+        handle_key(&mut app, key(KeyCode::Char('l')));
+        handle_key(&mut app, key(KeyCode::Char('l')));
+        assert_eq!(app.cursor, 3);
+        // Yank
+        handle_key(&mut app, key(KeyCode::Char('y')));
+        assert_eq!(app.mode, Mode::Normal);
+        assert_eq!(app.clipboard, vec![b'B', b'C', b'D']);
+    }
+
+    #[test]
+    fn visual_mode_esc_cancels() {
+        let mut app = make_app(b"ABCDEF");
+        handle_key(&mut app, key(KeyCode::Char('v')));
+        handle_key(&mut app, key(KeyCode::Esc));
+        assert_eq!(app.mode, Mode::Normal);
+        assert!(app.selection_anchor.is_none());
+    }
+
+    #[test]
+    fn paste_in_normal_mode() {
+        let mut app = make_app(b"ABCDEF");
+        app.clipboard = vec![b'X', b'Y'];
+        app.cursor = 0;
+        handle_key(&mut app, key(KeyCode::Char('p')));
+        assert_eq!(app.buffer.get(0), Some(b'X'));
+        assert_eq!(app.buffer.get(1), Some(b'Y'));
+        assert!(app.status_message.as_ref().unwrap().contains("Pasted 2"));
+    }
+
+    #[test]
+    fn paste_empty_shows_message() {
+        let mut app = make_app(b"test");
+        handle_key(&mut app, key(KeyCode::Char('p')));
+        assert!(app.status_message.as_ref().unwrap().contains("Nothing to paste"));
+    }
+
+    #[test]
+    fn set_bookmark_and_jump() {
+        let mut app = make_app(&vec![0u8; 256]);
+        app.cursor = 0x20;
+        // m + a → set bookmark 'a' at 0x20
+        handle_key(&mut app, key(KeyCode::Char('m')));
+        assert!(app.pending_bookmark.is_some());
+        handle_key(&mut app, key(KeyCode::Char('a')));
+        assert_eq!(app.bookmarks.get(&'a'), Some(&0x20));
+        assert!(app.status_message.as_ref().unwrap().contains("Bookmark 'a'"));
+
+        // Move somewhere else
+        app.move_cursor_to(0x80);
+        assert_eq!(app.cursor, 0x80);
+
+        // ' + a → jump back to 0x20
+        handle_key(&mut app, key(KeyCode::Char('\'')));
+        handle_key(&mut app, key(KeyCode::Char('a')));
+        assert_eq!(app.cursor, 0x20);
+        assert!(app.status_message.as_ref().unwrap().contains("Jumped to"));
+    }
+
+    #[test]
+    fn jump_to_unset_bookmark() {
+        let mut app = make_app(b"test");
+        handle_key(&mut app, key(KeyCode::Char('\'')));
+        handle_key(&mut app, key(KeyCode::Char('z')));
+        assert!(app.status_message.as_ref().unwrap().contains("not set"));
+    }
+
+    #[test]
+    fn bookmark_cancel_on_invalid_key() {
+        let mut app = make_app(b"test");
+        handle_key(&mut app, key(KeyCode::Char('m')));
+        // Press a non-lowercase letter
+        handle_key(&mut app, key(KeyCode::Char('1')));
+        assert!(app.pending_bookmark.is_none());
+        assert!(app.status_message.as_ref().unwrap().contains("cancelled"));
+    }
+
+    #[test]
+    fn multiple_bookmarks() {
+        let mut app = make_app(&vec![0u8; 256]);
+        // Set bookmark 'a' at 0x10
+        app.cursor = 0x10;
+        handle_key(&mut app, key(KeyCode::Char('m')));
+        handle_key(&mut app, key(KeyCode::Char('a')));
+
+        // Set bookmark 'b' at 0x50
+        app.move_cursor_to(0x50);
+        handle_key(&mut app, key(KeyCode::Char('m')));
+        handle_key(&mut app, key(KeyCode::Char('b')));
+
+        assert_eq!(app.bookmarks.len(), 2);
+
+        // Jump to 'a'
+        handle_key(&mut app, key(KeyCode::Char('\'')));
+        handle_key(&mut app, key(KeyCode::Char('a')));
+        assert_eq!(app.cursor, 0x10);
+
+        // Jump to 'b'
+        handle_key(&mut app, key(KeyCode::Char('\'')));
+        handle_key(&mut app, key(KeyCode::Char('b')));
+        assert_eq!(app.cursor, 0x50);
     }
 }

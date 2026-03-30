@@ -20,11 +20,16 @@ use std::io;
 struct Cli {
     /// File to open
     file: String,
+
+    /// Bytes per row (default: 16)
+    #[arg(short = 'c', long = "columns", default_value_t = 16)]
+    columns: usize,
 }
 
 fn main() -> Result<()> {
     let cli = Cli::parse();
     let mut app = App::open(&cli.file)?;
+    app.bytes_per_row = cli.columns.max(1);
 
     enable_raw_mode()?;
     let mut stdout = io::stdout();

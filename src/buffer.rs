@@ -3,12 +3,19 @@ use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 
+struct UndoEntry {
+    offset: usize,
+    old_value: Option<u8>,
+}
+
 /// Copy-on-open buffer with edit overlay.
 /// Original data is read into memory; edits are stored in a HashMap overlay.
 pub struct Buffer {
     pub path: PathBuf,
     original: Vec<u8>,
     edits: HashMap<usize, u8>,
+    undo_stack: Vec<UndoEntry>,
+    redo_stack: Vec<UndoEntry>,
 }
 
 impl Buffer {
@@ -23,6 +30,8 @@ impl Buffer {
             path: path.to_path_buf(),
             original,
             edits: HashMap::new(),
+            undo_stack: Vec::new(),
+            redo_stack: Vec::new(),
         })
     }
 
@@ -45,12 +54,50 @@ impl Buffer {
     /// Set a byte at the given offset (overwrite mode only).
     pub fn set(&mut self, offset: usize, value: u8) {
         if offset < self.original.len() {
+            let old_edit = self.edits.get(&offset).copied();
+            let old_value = old_edit.unwrap_or(self.original[offset]);
+            if value == old_value {
+                return;
+            }
+            self.undo_stack.push(UndoEntry {
+                offset,
+                old_value: old_edit,
+            });
+            self.redo_stack.clear();
             if value == self.original[offset] {
                 self.edits.remove(&offset);
             } else {
                 self.edits.insert(offset, value);
             }
         }
+    }
+
+    /// Undo the last edit. Returns the offset that was changed, if any.
+    pub fn undo(&mut self) -> Option<usize> {
+        let entry = self.undo_stack.pop()?;
+        self.redo_stack.push(UndoEntry {
+            offset: entry.offset,
+            old_value: self.edits.get(&entry.offset).copied(),
+        });
+        match entry.old_value {
+            Some(v) => { self.edits.insert(entry.offset, v); }
+            None => { self.edits.remove(&entry.offset); }
+        }
+        Some(entry.offset)
+    }
+
+    /// Redo the last undone edit. Returns the offset that was changed, if any.
+    pub fn redo(&mut self) -> Option<usize> {
+        let entry = self.redo_stack.pop()?;
+        self.undo_stack.push(UndoEntry {
+            offset: entry.offset,
+            old_value: self.edits.get(&entry.offset).copied(),
+        });
+        match entry.old_value {
+            Some(v) => { self.edits.insert(entry.offset, v); }
+            None => { self.edits.remove(&entry.offset); }
+        }
+        Some(entry.offset)
     }
 
     pub fn is_modified(&self, offset: usize) -> bool {
@@ -214,5 +261,78 @@ mod tests {
         buf.set(2, b'B');
         buf.set(3, b'B');
         assert_eq!(buf.find(b"BB", 0), Some(2));
+    }
+
+    #[test]
+    fn undo_reverts_edit() {
+        let mut buf = make_buffer(b"ABCD");
+        buf.set(0, 0xFF);
+        assert_eq!(buf.get(0), Some(0xFF));
+        assert!(buf.is_dirty());
+
+        let offset = buf.undo();
+        assert_eq!(offset, Some(0));
+        assert_eq!(buf.get(0), Some(b'A'));
+        assert!(!buf.is_dirty());
+    }
+
+    #[test]
+    fn redo_restores_edit() {
+        let mut buf = make_buffer(b"ABCD");
+        buf.set(0, 0xFF);
+        buf.undo();
+        assert_eq!(buf.get(0), Some(b'A'));
+
+        let offset = buf.redo();
+        assert_eq!(offset, Some(0));
+        assert_eq!(buf.get(0), Some(0xFF));
+        assert!(buf.is_dirty());
+    }
+
+    #[test]
+    fn undo_empty_returns_none() {
+        let mut buf = make_buffer(b"AB");
+        assert_eq!(buf.undo(), None);
+    }
+
+    #[test]
+    fn redo_empty_returns_none() {
+        let mut buf = make_buffer(b"AB");
+        assert_eq!(buf.redo(), None);
+    }
+
+    #[test]
+    fn new_edit_clears_redo_stack() {
+        let mut buf = make_buffer(b"ABCD");
+        buf.set(0, 0xFF);
+        buf.undo();
+        // New edit should clear redo
+        buf.set(1, 0xEE);
+        assert_eq!(buf.redo(), None);
+    }
+
+    #[test]
+    fn multiple_undo_redo() {
+        let mut buf = make_buffer(b"ABCD");
+        buf.set(0, 0x01);
+        buf.set(1, 0x02);
+        buf.set(2, 0x03);
+
+        buf.undo(); // revert offset 2
+        assert_eq!(buf.get(2), Some(b'C'));
+        buf.undo(); // revert offset 1
+        assert_eq!(buf.get(1), Some(b'B'));
+
+        buf.redo(); // restore offset 1
+        assert_eq!(buf.get(1), Some(0x02));
+        buf.redo(); // restore offset 2
+        assert_eq!(buf.get(2), Some(0x03));
+    }
+
+    #[test]
+    fn set_same_value_no_undo_entry() {
+        let mut buf = make_buffer(b"AB");
+        buf.set(0, b'A'); // same as original — no-op
+        assert_eq!(buf.undo(), None);
     }
 }

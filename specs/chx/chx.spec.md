@@ -21,7 +21,7 @@ Core application module for the `chx` hex editor. Defines the application state 
 
 | Symbol | Signature | Description |
 |--------|-----------|-------------|
-| `Mode` | `pub enum Mode { Normal, EditHex, EditAscii, Command, Search }` | Represents the current editor mode. Each variant controls input dispatch and UI rendering. |
+| `Mode` | `pub enum Mode { Normal, Visual, EditHex, EditAscii, Command, Search }` | Represents the current editor mode. Each variant controls input dispatch and UI rendering. |
 | `label` | `pub fn label(&self) -> &'static str` | Returns the display string for the mode (e.g., "NORMAL", "EDIT-HEX"). |
 | `App` | `pub struct App` | Central application state. Holds buffer, mode, cursor, scroll offset, search state, command input, and hex nibble tracking. |
 | `open` | `pub fn open(path: &str) -> Result<Self>` | Creates a new App by opening a file into a Buffer. Initializes all state to defaults (Normal mode, cursor at 0, 16 bytes per row). |
@@ -31,11 +31,14 @@ Core application module for the `chx` hex editor. Defines the application state 
 | `move_cursor_to` | `pub fn move_cursor_to(&mut self, pos: usize)` | Moves cursor to an absolute position, clamped to `[0, len-1]`. Calls `ensure_cursor_visible`. |
 | `page_down` | `pub fn page_down(&mut self)` | Moves cursor forward by one page (`visible_rows * bytes_per_row`). |
 | `page_up` | `pub fn page_up(&mut self)` | Moves cursor backward by one page. |
+| `selection_range` | `pub fn selection_range(&self) -> Option<(usize, usize)>` | Returns the selected byte range (lo, hi) inclusive if in visual mode, or `None` if no selection anchor is set. |
+| `yank_selection` | `pub fn yank_selection(&mut self) -> usize` | Copies selected bytes into the clipboard and clears the selection anchor. Returns the number of bytes yanked (0 if no selection). |
+| `paste` | `pub fn paste(&mut self) -> usize` | Overwrites bytes at cursor with clipboard contents (clamped to buffer length). Returns the number of bytes pasted. |
 | `execute_command` | `pub fn execute_command(&mut self) -> bool` | Parses and executes the current command input. Returns true if the app should quit. Supports `:q`, `:q!`, `:w`, `:wq`, `:goto`/`:g`. |
 
 ## Invariants
 
-1. `bytes_per_row` is always 16.
+1. `bytes_per_row` defaults to 16 and can be changed via the `:columns` command.
 2. Cursor is always clamped to `[0, buffer.len() - 1]` (or 0 for empty buffers).
 3. `ensure_cursor_visible` guarantees `scroll_offset <= cursor_row < scroll_offset + visible_rows`.
 4. `execute_command` always clears `command_input` and returns to Normal mode before processing the command.
@@ -100,3 +103,4 @@ Core application module for the `chx` hex editor. Defines the application state 
 | Date | Description |
 |------|-------------|
 | 2026-03-29 | Initial spec |
+| 2026-03-29 | Add Visual mode, selection_range, yank_selection, paste exports |
