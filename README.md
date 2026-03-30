@@ -74,7 +74,9 @@ chx dump.bin -c 32         # Open with 32 bytes per row
 | `p` | Paste |
 | `m<a-z>` | Set bookmark |
 | `'<a-z>` | Jump to bookmark |
-| `q` | Quit |
+| `Mouse click` | Position cursor |
+| `Mouse drag` | Select (visual mode) |
+| `Scroll wheel` | Scroll up/down |
 
 ### Edit Modes
 
