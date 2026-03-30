@@ -21,6 +21,7 @@ Provides search functionality for the hex editor — parsing search queries (ASC
 | `execute_search` | `pub fn execute_search(app: &mut App)` | Reads `app.search_input`, parses it, finds all occurrences in the buffer, populates `app.search_results`, and jumps to the first match at or after the cursor. |
 | `next_search_result` | `pub fn next_search_result(app: &mut App)` | Advances to the next search result (wraps around). Updates cursor and status message. |
 | `prev_search_result` | `pub fn prev_search_result(app: &mut App)` | Moves to the previous search result (wraps around). Updates cursor and status message. |
+| `execute_replace` | `pub fn execute_replace(app: &mut App, find: &str, replace: &str)` | Replaces all occurrences of `find` with `replace` in the buffer. Both patterns are parsed via `parse_search_pattern`. Requires same-length patterns (overwrite mode). Sets status message with replacement count. |
 
 ## Invariants
 
@@ -83,3 +84,4 @@ Provides search functionality for the hex editor — parsing search queries (ASC
 | Date | Description |
 |------|-------------|
 | 2026-03-29 | Initial spec |
+| 2026-03-29 | Add execute_replace export |
