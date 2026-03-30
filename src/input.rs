@@ -45,16 +45,6 @@ fn handle_normal(app: &mut App, key: KeyEvent) -> bool {
     }
 
     match key.code {
-        // Quit
-        KeyCode::Char('q') => {
-            if app.buffer.is_dirty() {
-                app.status_message =
-                    Some("Unsaved changes! Use :q! to force quit".to_string());
-                return false;
-            }
-            return true;
-        }
-
         // Mode switches
         KeyCode::Char(':') => {
             app.mode = Mode::Command;
@@ -379,15 +369,8 @@ mod tests {
     }
 
     #[test]
-    fn normal_q_clean_quits() {
+    fn normal_q_does_not_quit() {
         let mut app = make_app(b"data");
-        assert!(handle_key(&mut app, key(KeyCode::Char('q'))));
-    }
-
-    #[test]
-    fn normal_q_dirty_blocks() {
-        let mut app = make_app(b"data");
-        app.buffer.set(0, 0xFF);
         assert!(!handle_key(&mut app, key(KeyCode::Char('q'))));
     }
 
