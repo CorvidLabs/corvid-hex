@@ -23,8 +23,8 @@ Translates keyboard events into application actions for a terminal hex editor. A
 
 ## Invariants
 
-1. `handle_key` always returns `false` except when the user explicitly requests a quit (via `q` in Normal mode with no unsaved changes, or via a command that triggers quit).
-2. In Normal mode, pressing `q` with a dirty buffer never quits; it sets a status message warning and returns `false`.
+1. `handle_key` always returns `false` except when a command triggers quit (`:q`, `:q!`, `:wq`).
+2. Pressing `q` in Normal mode does not quit — quit is only available through the command system (`:q`/`:q!`).
 3. Entering EditHex mode always clears `hex_nibble` to `None`.
 4. Arrow-key navigation in EditHex mode resets `hex_nibble` to `None`, discarding any partial nibble input.
 5. Tab toggles between EditHex and EditAscii modes; switching to EditHex via Tab resets `hex_nibble`.
@@ -37,15 +37,10 @@ Translates keyboard events into application actions for a terminal hex editor. A
 
 ## Behavioral Examples
 
-**Normal mode quit with clean buffer**
-- Given: app is in Normal mode with no unsaved changes
+**Normal mode q does not quit**
+- Given: app is in Normal mode
 - When: user presses `q`
-- Then: `handle_key` returns `true`
-
-**Normal mode quit blocked by dirty buffer**
-- Given: app is in Normal mode with unsaved changes
-- When: user presses `q`
-- Then: `handle_key` returns `false` and `app.status_message` is set to `"Unsaved changes! Use :q! to force quit"`
+- Then: `handle_key` returns `false` (quit only via `:q` command)
 
 **Hex editing two-nibble write**
 - Given: app is in EditHex mode with `hex_nibble` as `None`, cursor at position 5
@@ -101,7 +96,7 @@ Translates keyboard events into application actions for a terminal hex editor. A
 
 | Condition | Behavior |
 |-----------|----------|
-| Quit requested with unsaved changes (Normal `q`) | Quit is blocked; status message set to warn user |
+| `q` pressed in Normal mode | Key is ignored; quit requires `:q` or `:q!` command |
 | Non-hex character pressed in EditHex mode | Key event is ignored (no state change) |
 | Control character pressed in EditAscii mode | Key event is ignored |
 | Unrecognized key in any mode | Key event is silently ignored |
