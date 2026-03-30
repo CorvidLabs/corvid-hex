@@ -202,3 +202,187 @@ fn handle_search(app: &mut App, key: KeyEvent) -> bool {
     }
     false
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crossterm::event::{KeyCode, KeyEvent, KeyEventKind, KeyEventState, KeyModifiers};
+
+    fn key(code: KeyCode) -> KeyEvent {
+        KeyEvent {
+            code,
+            modifiers: KeyModifiers::NONE,
+            kind: KeyEventKind::Press,
+            state: KeyEventState::NONE,
+        }
+    }
+
+    fn key_ctrl(code: KeyCode) -> KeyEvent {
+        KeyEvent {
+            code,
+            modifiers: KeyModifiers::CONTROL,
+            kind: KeyEventKind::Press,
+            state: KeyEventState::NONE,
+        }
+    }
+
+    fn make_app(data: &[u8]) -> App {
+        use std::io::Write;
+        let mut tmp = tempfile::NamedTempFile::new().unwrap();
+        tmp.write_all(data).unwrap();
+        App::open(tmp.path().to_str().unwrap()).unwrap()
+    }
+
+    #[test]
+    fn normal_vim_navigation() {
+        let mut app = make_app(&vec![0u8; 256]);
+        // l = right
+        handle_key(&mut app, key(KeyCode::Char('l')));
+        assert_eq!(app.cursor, 1);
+        // h = left
+        handle_key(&mut app, key(KeyCode::Char('h')));
+        assert_eq!(app.cursor, 0);
+        // j = down (1 row = 16 bytes)
+        handle_key(&mut app, key(KeyCode::Char('j')));
+        assert_eq!(app.cursor, 16);
+        // k = up
+        handle_key(&mut app, key(KeyCode::Char('k')));
+        assert_eq!(app.cursor, 0);
+    }
+
+    #[test]
+    fn normal_g_and_shift_g() {
+        let mut app = make_app(&vec![0u8; 256]);
+        handle_key(&mut app, key(KeyCode::Char('G')));
+        assert_eq!(app.cursor, 255);
+        handle_key(&mut app, key(KeyCode::Char('g')));
+        assert_eq!(app.cursor, 0);
+    }
+
+    #[test]
+    fn normal_q_clean_quits() {
+        let mut app = make_app(b"data");
+        assert!(handle_key(&mut app, key(KeyCode::Char('q'))));
+    }
+
+    #[test]
+    fn normal_q_dirty_blocks() {
+        let mut app = make_app(b"data");
+        app.buffer.set(0, 0xFF);
+        assert!(!handle_key(&mut app, key(KeyCode::Char('q'))));
+    }
+
+    #[test]
+    fn enter_edit_hex_mode() {
+        let mut app = make_app(b"test");
+        handle_key(&mut app, key(KeyCode::Char('i')));
+        assert_eq!(app.mode, Mode::EditHex);
+    }
+
+    #[test]
+    fn enter_edit_ascii_mode() {
+        let mut app = make_app(b"test");
+        handle_key(&mut app, key(KeyCode::Char('a')));
+        assert_eq!(app.mode, Mode::EditAscii);
+    }
+
+    #[test]
+    fn enter_command_mode() {
+        let mut app = make_app(b"test");
+        handle_key(&mut app, key(KeyCode::Char(':')));
+        assert_eq!(app.mode, Mode::Command);
+    }
+
+    #[test]
+    fn enter_search_mode() {
+        let mut app = make_app(b"test");
+        handle_key(&mut app, key(KeyCode::Char('/')));
+        assert_eq!(app.mode, Mode::Search);
+    }
+
+    #[test]
+    fn edit_hex_write_byte() {
+        let mut app = make_app(b"\x00\x00");
+        app.mode = Mode::EditHex;
+        // Type 'F' then 'F' → write 0xFF
+        handle_key(&mut app, key(KeyCode::Char('F')));
+        assert!(app.hex_nibble.is_some());
+        handle_key(&mut app, key(KeyCode::Char('F')));
+        assert_eq!(app.buffer.get(0), Some(0xFF));
+        assert_eq!(app.cursor, 1); // auto-advanced
+    }
+
+    #[test]
+    fn edit_hex_esc_returns_normal() {
+        let mut app = make_app(b"test");
+        app.mode = Mode::EditHex;
+        handle_key(&mut app, key(KeyCode::Esc));
+        assert_eq!(app.mode, Mode::Normal);
+    }
+
+    #[test]
+    fn edit_ascii_write_char() {
+        let mut app = make_app(b"AB");
+        app.mode = Mode::EditAscii;
+        handle_key(&mut app, key(KeyCode::Char('Z')));
+        assert_eq!(app.buffer.get(0), Some(b'Z'));
+        assert_eq!(app.cursor, 1);
+    }
+
+    #[test]
+    fn edit_hex_tab_switches_to_ascii() {
+        let mut app = make_app(b"test");
+        app.mode = Mode::EditHex;
+        handle_key(&mut app, key(KeyCode::Tab));
+        assert_eq!(app.mode, Mode::EditAscii);
+    }
+
+    #[test]
+    fn edit_ascii_tab_switches_to_hex() {
+        let mut app = make_app(b"test");
+        app.mode = Mode::EditAscii;
+        handle_key(&mut app, key(KeyCode::Tab));
+        assert_eq!(app.mode, Mode::EditHex);
+    }
+
+    #[test]
+    fn command_mode_typing_and_esc() {
+        let mut app = make_app(b"test");
+        app.mode = Mode::Command;
+        handle_key(&mut app, key(KeyCode::Char('q')));
+        assert_eq!(app.command_input, "q");
+        handle_key(&mut app, key(KeyCode::Esc));
+        assert_eq!(app.mode, Mode::Normal);
+        assert!(app.command_input.is_empty());
+    }
+
+    #[test]
+    fn command_mode_backspace_exits_when_empty() {
+        let mut app = make_app(b"test");
+        app.mode = Mode::Command;
+        handle_key(&mut app, key(KeyCode::Char('x')));
+        handle_key(&mut app, key(KeyCode::Backspace));
+        assert_eq!(app.mode, Mode::Normal);
+    }
+
+    #[test]
+    fn search_mode_typing_and_enter() {
+        let mut app = make_app(b"hello world");
+        app.mode = Mode::Search;
+        handle_key(&mut app, key(KeyCode::Char('w')));
+        handle_key(&mut app, key(KeyCode::Char('o')));
+        assert_eq!(app.search_input, "wo");
+        handle_key(&mut app, key(KeyCode::Enter));
+        assert_eq!(app.mode, Mode::Normal);
+        // Search should have executed
+        assert!(!app.search_results.is_empty());
+    }
+
+    #[test]
+    fn ctrl_d_half_page_down() {
+        let mut app = make_app(&vec![0u8; 4096]);
+        app.visible_rows = 10;
+        handle_key(&mut app, key_ctrl(KeyCode::Char('d')));
+        assert_eq!(app.cursor, 5 * 16); // half of 10 rows
+    }
+}

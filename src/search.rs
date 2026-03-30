@@ -11,7 +11,7 @@ pub fn parse_search_pattern(query: &str) -> Option<Vec<u8>> {
     if let Some(hex_str) = query.strip_prefix("x/").or_else(|| query.strip_prefix("0x")) {
         // Hex pattern: pairs of hex digits, spaces allowed
         let hex_str: String = hex_str.chars().filter(|c| !c.is_whitespace()).collect();
-        if hex_str.len() % 2 != 0 {
+        if !hex_str.len().is_multiple_of(2) {
             return None;
         }
         let mut bytes = Vec::new();
@@ -94,4 +94,98 @@ pub fn prev_search_result(app: &mut App) {
         app.search_results.len(),
         target
     ));
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parse_ascii_pattern() {
+        assert_eq!(parse_search_pattern("hello"), Some(b"hello".to_vec()));
+    }
+
+    #[test]
+    fn parse_hex_pattern_0x() {
+        assert_eq!(parse_search_pattern("0xDEAD"), Some(vec![0xDE, 0xAD]));
+    }
+
+    #[test]
+    fn parse_hex_pattern_x_slash() {
+        assert_eq!(parse_search_pattern("x/CAFE"), Some(vec![0xCA, 0xFE]));
+    }
+
+    #[test]
+    fn parse_hex_with_spaces() {
+        assert_eq!(parse_search_pattern("0xDE AD BE EF"), Some(vec![0xDE, 0xAD, 0xBE, 0xEF]));
+    }
+
+    #[test]
+    fn parse_hex_odd_length_returns_none() {
+        assert_eq!(parse_search_pattern("0xDEA"), None);
+    }
+
+    #[test]
+    fn parse_hex_invalid_chars_returns_none() {
+        assert_eq!(parse_search_pattern("0xGGHH"), None);
+    }
+
+    #[test]
+    fn parse_empty_returns_none() {
+        assert_eq!(parse_search_pattern(""), None);
+        assert_eq!(parse_search_pattern("  "), None);
+    }
+
+    #[test]
+    fn execute_search_finds_results() {
+        use std::io::Write;
+        let mut tmp = tempfile::NamedTempFile::new().unwrap();
+        tmp.write_all(b"abcXYZabcXYZ").unwrap();
+        let mut app = App::open(tmp.path().to_str().unwrap()).unwrap();
+
+        app.search_input = "XYZ".to_string();
+        execute_search(&mut app);
+
+        assert_eq!(app.search_results, vec![3, 9]);
+        assert_eq!(app.cursor, 3);
+    }
+
+    #[test]
+    fn execute_search_no_match() {
+        use std::io::Write;
+        let mut tmp = tempfile::NamedTempFile::new().unwrap();
+        tmp.write_all(b"abcdef").unwrap();
+        let mut app = App::open(tmp.path().to_str().unwrap()).unwrap();
+
+        app.search_input = "zzz".to_string();
+        execute_search(&mut app);
+
+        assert!(app.search_results.is_empty());
+        assert!(app.status_message.as_ref().unwrap().contains("not found"));
+    }
+
+    #[test]
+    fn next_prev_search_cycle() {
+        use std::io::Write;
+        let mut tmp = tempfile::NamedTempFile::new().unwrap();
+        tmp.write_all(b"AABAA").unwrap();
+        let mut app = App::open(tmp.path().to_str().unwrap()).unwrap();
+
+        app.search_input = "A".to_string();
+        execute_search(&mut app);
+        assert_eq!(app.search_results, vec![0, 1, 3, 4]);
+
+        next_search_result(&mut app);
+        assert_eq!(app.search_index, 1);
+        assert_eq!(app.cursor, 1);
+
+        prev_search_result(&mut app);
+        assert_eq!(app.search_index, 0);
+        assert_eq!(app.cursor, 0);
+
+        // Wrap backwards
+        prev_search_result(&mut app);
+        assert_eq!(app.search_index, 3);
+        assert_eq!(app.cursor, 4);
+    }
 }
