@@ -296,6 +296,8 @@ fn handle_search(app: &mut App, key: KeyEvent) -> bool {
         KeyCode::Esc => {
             app.mode = Mode::Normal;
             app.search_input.clear();
+            app.search_results.clear();
+            app.search_pattern_len = 0;
         }
         KeyCode::Enter => {
             app.mode = Mode::Normal;
@@ -305,10 +307,15 @@ fn handle_search(app: &mut App, key: KeyEvent) -> bool {
             app.search_input.pop();
             if app.search_input.is_empty() {
                 app.mode = Mode::Normal;
+                app.search_results.clear();
+                app.search_pattern_len = 0;
+            } else {
+                search::incremental_search(app);
             }
         }
         KeyCode::Char(c) => {
             app.search_input.push(c);
+            search::incremental_search(app);
         }
         _ => {}
     }

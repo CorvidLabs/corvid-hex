@@ -40,6 +40,8 @@ pub struct App {
     pub hex_nibble: Option<u8>,
     pub search_results: Vec<usize>,
     pub search_index: usize,
+    /// Length of the current search pattern (for multi-byte highlighting).
+    pub search_pattern_len: usize,
     /// Visual selection anchor (where 'v' was pressed).
     pub selection_anchor: Option<usize>,
     /// Clipboard for yank/paste.
@@ -66,6 +68,7 @@ impl App {
             hex_nibble: None,
             search_results: Vec::new(),
             search_index: 0,
+            search_pattern_len: 0,
             selection_anchor: None,
             clipboard: Vec::new(),
             bookmarks: HashMap::new(),

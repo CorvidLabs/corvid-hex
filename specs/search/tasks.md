@@ -10,6 +10,10 @@ spec: search.spec.md
 - [x] next/prev search result cycling
 - [x] execute_replace: find-and-replace with same-length constraint
 - [x] Replace supports both ASCII and hex patterns
+- [x] Case-insensitive search via `/i` suffix
+- [x] Incremental search (live highlighting while typing)
+- [x] Full-span match highlighting (all bytes in match, not just start byte)
+- [x] search_pattern_len stored in App for render to use
 
 ## Gaps
 

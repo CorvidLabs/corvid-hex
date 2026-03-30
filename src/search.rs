@@ -26,18 +26,66 @@ pub fn parse_search_pattern(query: &str) -> Option<Vec<u8>> {
     }
 }
 
+/// Check if the query ends with /i (case-insensitive flag).
+/// Returns (pattern_str, case_insensitive).
+fn parse_search_flags(query: &str) -> (&str, bool) {
+    if let Some(stripped) = query.strip_suffix("/i") {
+        (stripped, true)
+    } else {
+        (query, false)
+    }
+}
+
+/// Find all occurrences of pattern in buffer, optionally case-insensitive.
+fn find_all(app: &App, pattern: &[u8], case_insensitive: bool) -> Vec<usize> {
+    let mut results = Vec::new();
+    let len = app.buffer.len();
+    if pattern.is_empty() || len == 0 {
+        return results;
+    }
+
+    let mut pos = 0;
+    while pos + pattern.len() <= len {
+        let mut matched = true;
+        for (j, &p) in pattern.iter().enumerate() {
+            match app.buffer.get(pos + j) {
+                Some(b) if case_insensitive => {
+                    if !b.eq_ignore_ascii_case(&p) {
+                        matched = false;
+                        break;
+                    }
+                }
+                Some(b) => {
+                    if b != p {
+                        matched = false;
+                        break;
+                    }
+                }
+                None => {
+                    matched = false;
+                    break;
+                }
+            }
+        }
+        if matched {
+            results.push(pos);
+            pos += 1;
+        } else {
+            pos += 1;
+        }
+    }
+    results
+}
+
 pub fn execute_search(app: &mut App) {
     let query = app.search_input.clone();
     app.search_input.clear();
 
-    if let Some(pattern) = parse_search_pattern(&query) {
-        app.search_results.clear();
-        // Find all occurrences
-        let mut pos = 0;
-        while let Some(found) = app.buffer.find(&pattern, pos) {
-            app.search_results.push(found);
-            pos = found + 1;
-        }
+    let (pattern_str, case_insensitive) = parse_search_flags(&query);
+
+    if let Some(pattern) = parse_search_pattern(pattern_str) {
+        app.search_pattern_len = pattern.len();
+        app.search_results = find_all(app, &pattern, case_insensitive);
 
         if app.search_results.is_empty() {
             app.status_message = Some(format!("Pattern not found: {query}"));
@@ -59,6 +107,37 @@ pub fn execute_search(app: &mut App) {
         }
     } else {
         app.status_message = Some("Invalid search pattern".to_string());
+    }
+}
+
+/// Incremental search: update results without moving cursor or clearing input.
+pub fn incremental_search(app: &mut App) {
+    let query = &app.search_input;
+    if query.is_empty() {
+        app.search_results.clear();
+        app.search_pattern_len = 0;
+        return;
+    }
+
+    let (pattern_str, case_insensitive) = parse_search_flags(query);
+
+    if let Some(pattern) = parse_search_pattern(pattern_str) {
+        app.search_pattern_len = pattern.len();
+        app.search_results = find_all(app, &pattern, case_insensitive);
+
+        if app.search_results.is_empty() {
+            app.search_index = 0;
+        } else {
+            // Point to nearest match at or after cursor
+            app.search_index = app
+                .search_results
+                .iter()
+                .position(|&r| r >= app.cursor)
+                .unwrap_or(0);
+        }
+    } else {
+        app.search_results.clear();
+        app.search_pattern_len = 0;
     }
 }
 
@@ -189,6 +268,7 @@ mod tests {
 
         assert_eq!(app.search_results, vec![3, 9]);
         assert_eq!(app.cursor, 3);
+        assert_eq!(app.search_pattern_len, 3);
     }
 
     #[test]
@@ -289,5 +369,76 @@ mod tests {
         execute_replace(&mut app, "0xDEAD", "0xCAFE");
         assert_eq!(app.buffer.get(0), Some(0xCA));
         assert_eq!(app.buffer.get(1), Some(0xFE));
+    }
+
+    #[test]
+    fn case_insensitive_search() {
+        use std::io::Write;
+        let mut tmp = tempfile::NamedTempFile::new().unwrap();
+        tmp.write_all(b"Hello HELLO hello").unwrap();
+        let mut app = App::open(tmp.path().to_str().unwrap()).unwrap();
+
+        app.search_input = "hello/i".to_string();
+        execute_search(&mut app);
+
+        assert_eq!(app.search_results, vec![0, 6, 12]);
+        assert_eq!(app.search_pattern_len, 5);
+    }
+
+    #[test]
+    fn case_sensitive_search_default() {
+        use std::io::Write;
+        let mut tmp = tempfile::NamedTempFile::new().unwrap();
+        tmp.write_all(b"Hello HELLO hello").unwrap();
+        let mut app = App::open(tmp.path().to_str().unwrap()).unwrap();
+
+        app.search_input = "hello".to_string();
+        execute_search(&mut app);
+
+        assert_eq!(app.search_results, vec![12]);
+    }
+
+    #[test]
+    fn incremental_search_updates_results() {
+        use std::io::Write;
+        let mut tmp = tempfile::NamedTempFile::new().unwrap();
+        tmp.write_all(b"abcXYZabcXYZ").unwrap();
+        let mut app = App::open(tmp.path().to_str().unwrap()).unwrap();
+
+        // Type "X" — should find 2 results
+        app.search_input = "X".to_string();
+        incremental_search(&mut app);
+        assert_eq!(app.search_results, vec![3, 9]);
+        assert_eq!(app.search_pattern_len, 1);
+
+        // Type "XY" — should still find 2 results
+        app.search_input = "XY".to_string();
+        incremental_search(&mut app);
+        assert_eq!(app.search_results, vec![3, 9]);
+        assert_eq!(app.search_pattern_len, 2);
+
+        // Type "XYZ" — still 2
+        app.search_input = "XYZ".to_string();
+        incremental_search(&mut app);
+        assert_eq!(app.search_results, vec![3, 9]);
+        assert_eq!(app.search_pattern_len, 3);
+
+        // Clear — should clear results
+        app.search_input.clear();
+        incremental_search(&mut app);
+        assert!(app.search_results.is_empty());
+        assert_eq!(app.search_pattern_len, 0);
+    }
+
+    #[test]
+    fn incremental_search_case_insensitive() {
+        use std::io::Write;
+        let mut tmp = tempfile::NamedTempFile::new().unwrap();
+        tmp.write_all(b"Hello HELLO").unwrap();
+        let mut app = App::open(tmp.path().to_str().unwrap()).unwrap();
+
+        app.search_input = "hello/i".to_string();
+        incremental_search(&mut app);
+        assert_eq!(app.search_results, vec![0, 6]);
     }
 }
