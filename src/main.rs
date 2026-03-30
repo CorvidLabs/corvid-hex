@@ -1,3 +1,9 @@
+//! # chx — A TUI Hex Editor
+//!
+//! `chx` is a terminal-based hex editor built with [ratatui](https://ratatui.rs/).
+//! It supports viewing and editing binary files with hex and ASCII panes,
+//! search (hex and text), mouse navigation, and configurable column widths.
+
 mod app;
 mod buffer;
 mod input;

@@ -3,6 +3,8 @@ name = "chx"
 version = "0.1.0"
 edition = "2021"
 description = "A TUI hex editor"
+license = "MIT"
+repository = "https://github.com/CorvidLabs/corvid-hex"
 
 [[bin]]
 name = "chx"
