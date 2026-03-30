@@ -66,10 +66,13 @@ fn draw_header(f: &mut Frame, app: &App, area: Rect) {
     f.render_widget(header, area);
 }
 
-fn draw_hex_view(f: &mut Frame, app: &App, area: Rect) {
+fn draw_hex_view(f: &mut Frame, app: &mut App, area: Rect) {
     let block = Block::default().borders(Borders::NONE);
     let inner = block.inner(area);
     f.render_widget(block, area);
+
+    // Cache the hex view area for mouse hit-testing
+    app.hex_view_area = inner;
 
     let rows = inner.height as usize;
     let bpr = app.bytes_per_row;

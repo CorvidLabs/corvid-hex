@@ -35,6 +35,7 @@ Core application module for the `chx` hex editor. Defines the application state 
 | `yank_selection` | `pub fn yank_selection(&mut self) -> usize` | Copies selected bytes into the clipboard and clears the selection anchor. Returns the number of bytes yanked (0 if no selection). |
 | `paste` | `pub fn paste(&mut self) -> usize` | Overwrites bytes at cursor with clipboard contents (clamped to buffer length). Returns the number of bytes pasted. |
 | `execute_command` | `pub fn execute_command(&mut self) -> bool` | Parses and executes the current command input. Returns true if the app should quit. Supports `:q`, `:q!`, `:w`, `:wq`, `:goto`/`:g`, `:s/find/replace`, `:columns`/`:cols`, `:marks`. |
+| `offset_from_screen` | `pub fn offset_from_screen(&self, x: u16, y: u16) -> Option<usize>` | Maps terminal (x, y) screen coordinates to a byte offset. Returns `None` if the click is outside the hex view area or beyond the buffer length. Used for mouse click-to-position. |
 
 ## Invariants
 
@@ -117,3 +118,4 @@ Core application module for the `chx` hex editor. Defines the application state 
 | 2026-03-29 | Initial spec |
 | 2026-03-29 | Add Visual mode, selection_range, yank_selection, paste exports |
 | 2026-03-30 | Add bookmarks (HashMap), pending_bookmark, :marks command, :s/find/replace, :columns/:cols |
+| 2026-03-30 | Add offset_from_screen export for mouse coordinate mapping |
