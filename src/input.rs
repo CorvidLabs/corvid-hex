@@ -201,6 +201,48 @@ fn handle_visual(app: &mut App, key: KeyEvent) -> bool {
     false
 }
 
+fn handle_visual(app: &mut App, key: KeyEvent) -> bool {
+    app.status_message = None;
+
+    match key.code {
+        KeyCode::Esc => {
+            app.mode = Mode::Normal;
+            app.selection_anchor = None;
+        }
+
+        // Navigation extends selection
+        KeyCode::Char('h') | KeyCode::Left => app.move_cursor(-1),
+        KeyCode::Char('l') | KeyCode::Right => app.move_cursor(1),
+        KeyCode::Char('k') | KeyCode::Up => app.move_cursor(-(app.bytes_per_row as isize)),
+        KeyCode::Char('j') | KeyCode::Down => app.move_cursor(app.bytes_per_row as isize),
+
+        KeyCode::Home | KeyCode::Char('0') => {
+            let row_start = (app.cursor / app.bytes_per_row) * app.bytes_per_row;
+            app.move_cursor_to(row_start);
+        }
+        KeyCode::End | KeyCode::Char('$') => {
+            let row_end = ((app.cursor / app.bytes_per_row) + 1) * app.bytes_per_row - 1;
+            app.move_cursor_to(row_end);
+        }
+        KeyCode::Char('g') => app.move_cursor_to(0),
+        KeyCode::Char('G') => {
+            if !app.buffer.is_empty() {
+                app.move_cursor_to(app.buffer.len() - 1);
+            }
+        }
+
+        // Yank
+        KeyCode::Char('y') => {
+            let count = app.yank_selection();
+            app.mode = Mode::Normal;
+            app.status_message = Some(format!("Yanked {count} bytes"));
+        }
+
+        _ => {}
+    }
+    false
+}
+
 fn handle_edit_hex(app: &mut App, key: KeyEvent) -> bool {
     match key.code {
         KeyCode::Esc => {
