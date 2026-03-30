@@ -19,6 +19,7 @@ Translates keyboard events into application actions for a terminal hex editor. A
 | Symbol | Signature | Description |
 |--------|-----------|-------------|
 | `handle_key` | `fn handle_key(app: &mut App, key: KeyEvent) -> bool` | Dispatches a key event to the handler for the current app mode. Returns `true` if the application should quit. |
+| `handle_mouse` | `pub fn handle_mouse(app: &mut App, mouse: MouseEvent)` | Handles mouse events: left-click positions the cursor, drag starts/extends visual selection, scroll wheel moves by 3 rows. Exits text-input modes on click. |
 
 ## Invariants
 
@@ -112,7 +113,7 @@ Translates keyboard events into application actions for a terminal hex editor. A
 |--------|-------------|---------|
 | `crate::app` | `App`, `Mode` | Application state and mode enum |
 | `crate::search` | `next_search_result`, `prev_search_result`, `execute_search` | Search execution and result navigation |
-| `crossterm::event` | `KeyCode`, `KeyEvent`, `KeyModifiers` | Keyboard event types |
+| `crossterm::event` | `KeyCode`, `KeyEvent`, `KeyModifiers`, `MouseEvent`, `MouseEventKind`, `MouseButton` | Keyboard and mouse event types |
 
 ## Change Log
 
@@ -120,3 +121,4 @@ Translates keyboard events into application actions for a terminal hex editor. A
 |------|-------------|
 | 2026-03-29 | Initial spec |
 | 2026-03-30 | Add bookmark two-key sequences (m+letter, '+letter), Visual mode handler |
+| 2026-03-30 | Add handle_mouse export for mouse click, drag, and scroll support |
