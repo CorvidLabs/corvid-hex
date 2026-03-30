@@ -35,8 +35,6 @@ Core application module for the `chx` hex editor. Defines the application state 
 | `yank_selection` | `pub fn yank_selection(&mut self) -> usize` | Copies selected bytes into the clipboard and clears the selection anchor. Returns the number of bytes yanked (0 if no selection). |
 | `paste` | `pub fn paste(&mut self) -> usize` | Overwrites bytes at cursor with clipboard contents (clamped to buffer length). Returns the number of bytes pasted. |
 | `execute_command` | `pub fn execute_command(&mut self) -> bool` | Parses and executes the current command input. Returns true if the app should quit. Supports `:q`, `:q!`, `:w`, `:wq`, `:goto`/`:g`, `:s/find/replace`, `:columns`/`:cols`, `:marks`. |
-| `bookmarks` | `pub bookmarks: HashMap<char, usize>` | Named offset bookmarks (a-z). Maps bookmark letter to byte offset. |
-| `pending_bookmark` | `pub pending_bookmark: Option<char>` | Tracks two-key bookmark commands: `Some('m')` = set bookmark, `Some('\'')` = jump to bookmark. |
 
 ## Invariants
 
