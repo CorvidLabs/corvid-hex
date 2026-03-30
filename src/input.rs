@@ -17,6 +17,33 @@ pub fn handle_key(app: &mut App, key: KeyEvent) -> bool {
 fn handle_normal(app: &mut App, key: KeyEvent) -> bool {
     app.status_message = None;
 
+    // Handle pending bookmark operations (m + letter, ' + letter)
+    if let Some(pending) = app.pending_bookmark.take() {
+        if let KeyCode::Char(c) = key.code {
+            if c.is_ascii_lowercase() {
+                match pending {
+                    'm' => {
+                        app.bookmarks.insert(c, app.cursor);
+                        app.status_message = Some(format!("Bookmark '{c}' set at 0x{:X}", app.cursor));
+                    }
+                    '\'' => {
+                        if let Some(&offset) = app.bookmarks.get(&c) {
+                            app.move_cursor_to(offset);
+                            app.status_message = Some(format!("Jumped to bookmark '{c}'"));
+                        } else {
+                            app.status_message = Some(format!("Bookmark '{c}' not set"));
+                        }
+                    }
+                    _ => {}
+                }
+                return false;
+            }
+        }
+        // Invalid key after m/' — cancel silently
+        app.status_message = Some("Bookmark cancelled".to_string());
+        return false;
+    }
+
     match key.code {
         // Quit
         KeyCode::Char('q') => {
@@ -118,6 +145,14 @@ fn handle_normal(app: &mut App, key: KeyEvent) -> bool {
         // Search navigation
         KeyCode::Char('n') => search::next_search_result(app),
         KeyCode::Char('N') => search::prev_search_result(app),
+
+        // Bookmarks
+        KeyCode::Char('m') => {
+            app.pending_bookmark = Some('m');
+        }
+        KeyCode::Char('\'') => {
+            app.pending_bookmark = Some('\'');
+        }
 
         _ => {}
     }
@@ -553,5 +588,71 @@ mod tests {
         let mut app = make_app(b"test");
         handle_key(&mut app, key(KeyCode::Char('p')));
         assert!(app.status_message.as_ref().unwrap().contains("Nothing to paste"));
+    }
+
+    #[test]
+    fn set_bookmark_and_jump() {
+        let mut app = make_app(&vec![0u8; 256]);
+        app.cursor = 0x20;
+        // m + a → set bookmark 'a' at 0x20
+        handle_key(&mut app, key(KeyCode::Char('m')));
+        assert!(app.pending_bookmark.is_some());
+        handle_key(&mut app, key(KeyCode::Char('a')));
+        assert_eq!(app.bookmarks.get(&'a'), Some(&0x20));
+        assert!(app.status_message.as_ref().unwrap().contains("Bookmark 'a'"));
+
+        // Move somewhere else
+        app.move_cursor_to(0x80);
+        assert_eq!(app.cursor, 0x80);
+
+        // ' + a → jump back to 0x20
+        handle_key(&mut app, key(KeyCode::Char('\'')));
+        handle_key(&mut app, key(KeyCode::Char('a')));
+        assert_eq!(app.cursor, 0x20);
+        assert!(app.status_message.as_ref().unwrap().contains("Jumped to"));
+    }
+
+    #[test]
+    fn jump_to_unset_bookmark() {
+        let mut app = make_app(b"test");
+        handle_key(&mut app, key(KeyCode::Char('\'')));
+        handle_key(&mut app, key(KeyCode::Char('z')));
+        assert!(app.status_message.as_ref().unwrap().contains("not set"));
+    }
+
+    #[test]
+    fn bookmark_cancel_on_invalid_key() {
+        let mut app = make_app(b"test");
+        handle_key(&mut app, key(KeyCode::Char('m')));
+        // Press a non-lowercase letter
+        handle_key(&mut app, key(KeyCode::Char('1')));
+        assert!(app.pending_bookmark.is_none());
+        assert!(app.status_message.as_ref().unwrap().contains("cancelled"));
+    }
+
+    #[test]
+    fn multiple_bookmarks() {
+        let mut app = make_app(&vec![0u8; 256]);
+        // Set bookmark 'a' at 0x10
+        app.cursor = 0x10;
+        handle_key(&mut app, key(KeyCode::Char('m')));
+        handle_key(&mut app, key(KeyCode::Char('a')));
+
+        // Set bookmark 'b' at 0x50
+        app.move_cursor_to(0x50);
+        handle_key(&mut app, key(KeyCode::Char('m')));
+        handle_key(&mut app, key(KeyCode::Char('b')));
+
+        assert_eq!(app.bookmarks.len(), 2);
+
+        // Jump to 'a'
+        handle_key(&mut app, key(KeyCode::Char('\'')));
+        handle_key(&mut app, key(KeyCode::Char('a')));
+        assert_eq!(app.cursor, 0x10);
+
+        // Jump to 'b'
+        handle_key(&mut app, key(KeyCode::Char('\'')));
+        handle_key(&mut app, key(KeyCode::Char('b')));
+        assert_eq!(app.cursor, 0x50);
     }
 }

@@ -1,6 +1,7 @@
 use crate::buffer::Buffer;
 use crate::search;
 use anyhow::Result;
+use std::collections::HashMap;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Mode {
@@ -43,6 +44,10 @@ pub struct App {
     pub selection_anchor: Option<usize>,
     /// Clipboard for yank/paste.
     pub clipboard: Vec<u8>,
+    /// Named offset bookmarks (a-z).
+    pub bookmarks: HashMap<char, usize>,
+    /// Pending two-key command: Some('m') = set bookmark, Some('\'') = jump to bookmark.
+    pub pending_bookmark: Option<char>,
 }
 
 impl App {
@@ -63,6 +68,8 @@ impl App {
             search_index: 0,
             selection_anchor: None,
             clipboard: Vec::new(),
+            bookmarks: HashMap::new(),
+            pending_bookmark: None,
         })
     }
 
@@ -199,6 +206,19 @@ impl App {
                     search::execute_replace(self, find, replace);
                 } else {
                     self.status_message = Some("Usage: s/find/replace".to_string());
+                }
+            }
+            "marks" => {
+                if self.bookmarks.is_empty() {
+                    self.status_message = Some("No bookmarks set".to_string());
+                } else {
+                    let mut marks: Vec<_> = self.bookmarks.iter().collect();
+                    marks.sort_by_key(|(k, _)| *k);
+                    let list: Vec<String> = marks
+                        .iter()
+                        .map(|(k, v)| format!("{}:0x{:X}", k, v))
+                        .collect();
+                    self.status_message = Some(format!("Marks: {}", list.join(" ")));
                 }
             }
             _ if cmd.starts_with("columns ") || cmd.starts_with("cols ") => {
@@ -450,5 +470,25 @@ mod tests {
     fn paste_empty_clipboard() {
         let mut app = make_app(b"test");
         assert_eq!(app.paste(), 0);
+    }
+
+    #[test]
+    fn execute_command_marks_empty() {
+        let mut app = make_app(b"test");
+        app.command_input = "marks".to_string();
+        app.execute_command();
+        assert!(app.status_message.as_ref().unwrap().contains("No bookmarks"));
+    }
+
+    #[test]
+    fn execute_command_marks_lists() {
+        let mut app = make_app(&vec![0u8; 256]);
+        app.bookmarks.insert('a', 0x10);
+        app.bookmarks.insert('b', 0x20);
+        app.command_input = "marks".to_string();
+        app.execute_command();
+        let msg = app.status_message.as_ref().unwrap();
+        assert!(msg.contains("a:0x10"));
+        assert!(msg.contains("b:0x20"));
     }
 }
