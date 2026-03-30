@@ -75,7 +75,12 @@ fn draw_hex_view(f: &mut Frame, app: &mut App, area: Rect) {
     app.hex_view_area = inner;
 
     let rows = inner.height as usize;
-    let bpr = app.bytes_per_row;
+
+    // Auto-fit bytes_per_row to terminal width.
+    // Layout: 9 (offset) + (bpr*3 + 2) (hex) + 1 (gap) + (bpr + 2) (ascii) = 14 + 4*bpr
+    let max_bpr = (inner.width as usize).saturating_sub(14) / 4;
+    let bpr = app.requested_bytes_per_row.min(max_bpr).max(1);
+    app.bytes_per_row = bpr;
 
     // Build search hit set for quick lookup — include all bytes in each match span
     let pattern_len = app.search_pattern_len.max(1);
@@ -155,13 +160,16 @@ fn draw_hex_view(f: &mut Frame, app: &mut App, area: Rect) {
             }
         }
 
+        let hex_x = inner.x + 9;
+        let hex_w = ((bpr * 3 + 2) as u16).min(inner.width.saturating_sub(9));
         f.render_widget(
             Paragraph::new(Line::from(hex_spans)),
-            Rect::new(inner.x + 9, y, (bpr * 3 + 2) as u16, 1),
+            Rect::new(hex_x, y, hex_w, 1),
         );
 
         // ASCII column
-        let ascii_x = inner.x + 9 + (bpr * 3 + 2) as u16 + 1;
+        let ascii_x = hex_x + hex_w + 1;
+        let ascii_w = ((bpr + 2) as u16).min((inner.x + inner.width).saturating_sub(ascii_x));
         let mut ascii_spans: Vec<Span> = Vec::with_capacity(bpr + 2);
         ascii_spans.push(Span::styled("│", Style::default().fg(Color::DarkGray)));
 
@@ -203,10 +211,12 @@ fn draw_hex_view(f: &mut Frame, app: &mut App, area: Rect) {
 
         ascii_spans.push(Span::styled("│", Style::default().fg(Color::DarkGray)));
 
-        f.render_widget(
-            Paragraph::new(Line::from(ascii_spans)),
-            Rect::new(ascii_x, y, (bpr + 2) as u16, 1),
-        );
+        if ascii_w > 0 {
+            f.render_widget(
+                Paragraph::new(Line::from(ascii_spans)),
+                Rect::new(ascii_x, y, ascii_w, 1),
+            );
+        }
     }
 }
 

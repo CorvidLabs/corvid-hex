@@ -36,6 +36,7 @@ fn main() -> Result<()> {
     let cli = Cli::parse();
     let mut app = App::open(&cli.file)?;
     app.bytes_per_row = cli.columns.max(1);
+    app.requested_bytes_per_row = app.bytes_per_row;
 
     enable_raw_mode()?;
     let mut stdout = io::stdout();
