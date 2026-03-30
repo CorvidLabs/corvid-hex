@@ -1,0 +1,13 @@
+name: Spec Validation
+on: [push, pull_request]
+
+jobs:
+  specsync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: CorvidLabs/spec-sync@v2
+        with:
+          strict: 'true'
+          require-coverage: '100'
+          comment: 'true'

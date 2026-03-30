@@ -1,0 +1,19 @@
+{
+  "excludeDirs": [],
+  "excludePatterns": [
+    "**/*.test.rs"
+  ],
+  "requiredSections": [
+    "Purpose",
+    "Public API",
+    "Invariants",
+    "Behavioral Examples",
+    "Error Cases",
+    "Dependencies",
+    "Change Log"
+  ],
+  "sourceDirs": [
+    "src"
+  ],
+  "specsDir": "specs"
+}
