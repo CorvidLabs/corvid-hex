@@ -80,6 +80,24 @@ fn handle_normal(app: &mut App, key: KeyEvent) -> bool {
             app.move_cursor(-(half as isize));
         }
 
+        // Undo/Redo
+        KeyCode::Char('u') => {
+            if let Some(offset) = app.buffer.undo() {
+                app.move_cursor_to(offset);
+                app.status_message = Some("Undo".to_string());
+            } else {
+                app.status_message = Some("Nothing to undo".to_string());
+            }
+        }
+        KeyCode::Char('r') if key.modifiers.contains(KeyModifiers::CONTROL) => {
+            if let Some(offset) = app.buffer.redo() {
+                app.move_cursor_to(offset);
+                app.status_message = Some("Redo".to_string());
+            } else {
+                app.status_message = Some("Nothing to redo".to_string());
+            }
+        }
+
         // Search navigation
         KeyCode::Char('n') => search::next_search_result(app),
         KeyCode::Char('N') => search::prev_search_result(app),
@@ -96,7 +114,7 @@ fn handle_edit_hex(app: &mut App, key: KeyEvent) -> bool {
             app.hex_nibble = None;
         }
         KeyCode::Char(c) if c.is_ascii_hexdigit() => {
-            let nibble = u8::from_str_radix(&c.to_string(), 16).unwrap();
+            let Some(nibble) = c.to_digit(16).map(|d| d as u8) else { return false; };
             if let Some(high) = app.hex_nibble {
                 // Second nibble — write the byte
                 let value = (high << 4) | nibble;
@@ -384,5 +402,44 @@ mod tests {
         app.visible_rows = 10;
         handle_key(&mut app, key_ctrl(KeyCode::Char('d')));
         assert_eq!(app.cursor, 5 * 16); // half of 10 rows
+    }
+
+    #[test]
+    fn undo_in_normal_mode() {
+        let mut app = make_app(b"\x00\x00");
+        // Edit a byte
+        app.mode = Mode::EditHex;
+        handle_key(&mut app, key(KeyCode::Char('F')));
+        handle_key(&mut app, key(KeyCode::Char('F')));
+        assert_eq!(app.buffer.get(0), Some(0xFF));
+
+        // Undo in normal mode
+        app.mode = Mode::Normal;
+        handle_key(&mut app, key(KeyCode::Char('u')));
+        assert_eq!(app.buffer.get(0), Some(0x00));
+        assert_eq!(app.cursor, 0);
+    }
+
+    #[test]
+    fn redo_in_normal_mode() {
+        let mut app = make_app(b"\x00\x00");
+        app.mode = Mode::EditHex;
+        handle_key(&mut app, key(KeyCode::Char('A')));
+        handle_key(&mut app, key(KeyCode::Char('B')));
+        assert_eq!(app.buffer.get(0), Some(0xAB));
+
+        app.mode = Mode::Normal;
+        handle_key(&mut app, key(KeyCode::Char('u')));
+        assert_eq!(app.buffer.get(0), Some(0x00));
+
+        handle_key(&mut app, key_ctrl(KeyCode::Char('r')));
+        assert_eq!(app.buffer.get(0), Some(0xAB));
+    }
+
+    #[test]
+    fn undo_nothing_shows_message() {
+        let mut app = make_app(b"test");
+        handle_key(&mut app, key(KeyCode::Char('u')));
+        assert!(app.status_message.as_ref().unwrap().contains("Nothing to undo"));
     }
 }
