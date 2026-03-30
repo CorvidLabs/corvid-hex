@@ -1,6 +1,7 @@
 use crate::buffer::Buffer;
 use crate::search;
 use anyhow::Result;
+use ratatui::prelude::Rect;
 use std::collections::HashMap;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -50,6 +51,8 @@ pub struct App {
     pub bookmarks: HashMap<char, usize>,
     /// Pending two-key command: Some('m') = set bookmark, Some('\'') = jump to bookmark.
     pub pending_bookmark: Option<char>,
+    /// Cached hex view inner area (set during render, used for mouse hit-testing).
+    pub hex_view_area: Rect,
 }
 
 impl App {
@@ -73,6 +76,7 @@ impl App {
             clipboard: Vec::new(),
             bookmarks: HashMap::new(),
             pending_bookmark: None,
+            hex_view_area: Rect::default(),
         })
     }
 
@@ -145,6 +149,68 @@ impl App {
             }
         }
         count
+    }
+
+    /// Map terminal (x, y) coordinates to a byte offset, if the click lands on a byte.
+    pub fn offset_from_screen(&self, x: u16, y: u16) -> Option<usize> {
+        let area = self.hex_view_area;
+        if area.width == 0 || area.height == 0 {
+            return None;
+        }
+        if y < area.y || y >= area.y + area.height {
+            return None;
+        }
+
+        let row_idx = (y - area.y) as usize;
+        let data_row = self.scroll_offset + row_idx;
+        let row_offset = data_row * self.bytes_per_row;
+        if row_offset >= self.buffer.len() {
+            return None;
+        }
+
+        let bpr = self.bytes_per_row;
+
+        // Hex section: starts at area.x + 9, content has 1-char leading space
+        let hex_start = area.x + 9;
+        let hex_width = (bpr * 3 + 2) as u16;
+
+        if x >= hex_start && x < hex_start + hex_width {
+            let rel_x = (x - hex_start) as usize;
+            // Leading space at position 0
+            if rel_x == 0 {
+                return None;
+            }
+            // For col c: position = 1 + 3*c + (if c > 7 { 1 } else { 0 })
+            // Byte occupies positions pos and pos+1
+            for col in 0..bpr {
+                let pos = 1 + 3 * col + if col > 7 { 1 } else { 0 };
+                if rel_x >= pos && rel_x <= pos + 1 {
+                    let offset = row_offset + col;
+                    if offset < self.buffer.len() {
+                        return Some(offset);
+                    }
+                }
+            }
+            return None;
+        }
+
+        // ASCII section: starts at area.x + 9 + hex_width + 1, first char is "│"
+        let ascii_start = area.x + 9 + hex_width + 1;
+        let ascii_width = (bpr + 2) as u16;
+
+        if x >= ascii_start && x < ascii_start + ascii_width {
+            let rel_x = (x - ascii_start) as usize;
+            // Position 0 is "│", bytes at 1..=bpr, last is "│"
+            if rel_x >= 1 && rel_x <= bpr {
+                let col = rel_x - 1;
+                let offset = row_offset + col;
+                if offset < self.buffer.len() {
+                    return Some(offset);
+                }
+            }
+        }
+
+        None
     }
 
     pub fn page_down(&mut self) {

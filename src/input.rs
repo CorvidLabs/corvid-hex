@@ -1,6 +1,6 @@
 use crate::app::{App, Mode};
 use crate::search;
-use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
+use crossterm::event::{KeyCode, KeyEvent, KeyModifiers, MouseButton, MouseEvent, MouseEventKind};
 
 /// Handle a key event. Returns true if the app should quit.
 pub fn handle_key(app: &mut App, key: KeyEvent) -> bool {
@@ -11,6 +11,50 @@ pub fn handle_key(app: &mut App, key: KeyEvent) -> bool {
         Mode::EditAscii => handle_edit_ascii(app, key),
         Mode::Command => handle_command(app, key),
         Mode::Search => handle_search(app, key),
+    }
+}
+
+/// Handle a mouse event.
+pub fn handle_mouse(app: &mut App, mouse: MouseEvent) {
+    match mouse.kind {
+        MouseEventKind::Down(MouseButton::Left) => {
+            if let Some(offset) = app.offset_from_screen(mouse.column, mouse.row) {
+                // Exit any text-input modes on click
+                match app.mode {
+                    Mode::Command | Mode::Search => {
+                        app.mode = Mode::Normal;
+                    }
+                    Mode::EditHex => {
+                        app.hex_nibble = None;
+                    }
+                    _ => {}
+                }
+                // If already in visual mode, restart selection; otherwise just position cursor
+                if app.mode == Mode::Visual {
+                    app.selection_anchor = Some(offset);
+                }
+                app.move_cursor_to(offset);
+            }
+        }
+        MouseEventKind::Drag(MouseButton::Left) => {
+            if let Some(offset) = app.offset_from_screen(mouse.column, mouse.row) {
+                // Start visual selection on drag if not already in visual mode
+                if app.mode != Mode::Visual {
+                    app.mode = Mode::Visual;
+                    app.selection_anchor = Some(app.cursor);
+                }
+                app.move_cursor_to(offset);
+            }
+        }
+        MouseEventKind::ScrollDown => {
+            let scroll_lines = 3;
+            app.move_cursor((scroll_lines * app.bytes_per_row) as isize);
+        }
+        MouseEventKind::ScrollUp => {
+            let scroll_lines = 3;
+            app.move_cursor(-((scroll_lines * app.bytes_per_row) as isize));
+        }
+        _ => {}
     }
 }
 
@@ -316,6 +360,9 @@ fn handle_search(app: &mut App, key: KeyEvent) -> bool {
 mod tests {
     use super::*;
     use crossterm::event::{KeyCode, KeyEvent, KeyEventKind, KeyEventState, KeyModifiers};
+
+    use crossterm::event::MouseEventKind;
+    use ratatui::prelude::Rect;
 
     fn key(code: KeyCode) -> KeyEvent {
         KeyEvent {
@@ -757,5 +804,104 @@ mod tests {
         handle_key(&mut app, key(KeyCode::Char('\'')));
         handle_key(&mut app, key(KeyCode::Char('b')));
         assert_eq!(app.cursor, 0x50);
+    }
+
+    fn mouse_event(kind: MouseEventKind, col: u16, row: u16) -> MouseEvent {
+        MouseEvent {
+            kind,
+            column: col,
+            row,
+            modifiers: KeyModifiers::NONE,
+        }
+    }
+
+    fn make_app_with_area(data: &[u8]) -> App {
+        let mut app = make_app(data);
+        // Simulate hex view area as if terminal is at (0,0) with header at row 0
+        // Hex view inner area starts at row 1
+        app.hex_view_area = Rect::new(0, 1, 80, 20);
+        app.visible_rows = 20;
+        app
+    }
+
+    #[test]
+    fn mouse_click_positions_cursor_hex() {
+        let mut app = make_app_with_area(&vec![0u8; 256]);
+        // Hex byte 0 is at x = 9 + 1 = 10 (offset col 9 chars + 1 leading space)
+        handle_mouse(&mut app, mouse_event(MouseEventKind::Down(MouseButton::Left), 10, 1));
+        assert_eq!(app.cursor, 0);
+
+        // Hex byte 1 is at x = 9 + 4 = 13
+        handle_mouse(&mut app, mouse_event(MouseEventKind::Down(MouseButton::Left), 13, 1));
+        assert_eq!(app.cursor, 1);
+    }
+
+    #[test]
+    fn mouse_click_positions_cursor_ascii() {
+        let mut app = make_app_with_area(&vec![0u8; 256]);
+        // ASCII section starts at x = 9 + (16*3+2) + 1 = 60, first char is "│" at 60
+        // Byte 0 is at x = 61
+        handle_mouse(&mut app, mouse_event(MouseEventKind::Down(MouseButton::Left), 61, 1));
+        assert_eq!(app.cursor, 0);
+
+        // Byte 3 is at x = 64
+        handle_mouse(&mut app, mouse_event(MouseEventKind::Down(MouseButton::Left), 64, 1));
+        assert_eq!(app.cursor, 3);
+    }
+
+    #[test]
+    fn mouse_click_row_offset() {
+        let mut app = make_app_with_area(&vec![0u8; 256]);
+        // Click byte 0 on row 2 (data row 1) → offset 16
+        handle_mouse(&mut app, mouse_event(MouseEventKind::Down(MouseButton::Left), 10, 2));
+        assert_eq!(app.cursor, 16);
+    }
+
+    #[test]
+    fn mouse_drag_starts_visual_selection() {
+        let mut app = make_app_with_area(&vec![0u8; 256]);
+        // Click at byte 0
+        handle_mouse(&mut app, mouse_event(MouseEventKind::Down(MouseButton::Left), 10, 1));
+        assert_eq!(app.cursor, 0);
+        assert_eq!(app.mode, Mode::Normal);
+
+        // Drag to byte 3
+        handle_mouse(&mut app, mouse_event(MouseEventKind::Drag(MouseButton::Left), 19, 1));
+        assert_eq!(app.mode, Mode::Visual);
+        assert_eq!(app.selection_anchor, Some(0));
+        assert_eq!(app.cursor, 3);
+        assert_eq!(app.selection_range(), Some((0, 3)));
+    }
+
+    #[test]
+    fn mouse_scroll_moves_cursor() {
+        let mut app = make_app_with_area(&vec![0u8; 4096]);
+        assert_eq!(app.cursor, 0);
+        // Scroll down
+        handle_mouse(&mut app, mouse_event(MouseEventKind::ScrollDown, 0, 0));
+        assert_eq!(app.cursor, 3 * 16); // 3 lines * 16 bytes
+
+        // Scroll up
+        handle_mouse(&mut app, mouse_event(MouseEventKind::ScrollUp, 0, 0));
+        assert_eq!(app.cursor, 0);
+    }
+
+    #[test]
+    fn mouse_click_exits_command_mode() {
+        let mut app = make_app_with_area(&vec![0u8; 256]);
+        app.mode = Mode::Command;
+        app.command_input = "goto".to_string();
+        handle_mouse(&mut app, mouse_event(MouseEventKind::Down(MouseButton::Left), 10, 1));
+        assert_eq!(app.mode, Mode::Normal);
+        assert_eq!(app.cursor, 0);
+    }
+
+    #[test]
+    fn mouse_click_outside_hex_view_ignored() {
+        let mut app = make_app_with_area(&vec![0u8; 256]);
+        app.cursor = 5;
+        // Click in offset column (x=2) — should not move cursor
+        handle_mouse(&mut app, mouse_event(MouseEventKind::Down(MouseButton::Left), 2, 1));
+        assert_eq!(app.cursor, 5);
     }
 }
