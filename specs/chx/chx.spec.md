@@ -23,7 +23,7 @@ Core application module for the `chx` hex editor. Defines the application state 
 |--------|-----------|-------------|
 | `Mode` | `pub enum Mode { Normal, Visual, EditHex, EditAscii, Command, Search }` | Represents the current editor mode. Each variant controls input dispatch and UI rendering. |
 | `label` | `pub fn label(&self) -> &'static str` | Returns the display string for the mode (e.g., "NORMAL", "EDIT-HEX"). |
-| `App` | `pub struct App` | Central application state. Holds buffer, mode, cursor, scroll offset, search state, command input, and hex nibble tracking. |
+| `App` | `pub struct App` | Central application state. Holds buffer, mode, cursor, scroll offset, search state, command input, hex nibble tracking, bookmarks, and pending bookmark state. |
 | `open` | `pub fn open(path: &str) -> Result<Self>` | Creates a new App by opening a file into a Buffer. Initializes all state to defaults (Normal mode, cursor at 0, 16 bytes per row). |
 | `cursor_row` | `pub fn cursor_row(&self) -> usize` | Returns the row index of the current cursor position. |
 | `ensure_cursor_visible` | `pub fn ensure_cursor_visible(&mut self)` | Adjusts `scroll_offset` so the cursor row is within the visible viewport. |
@@ -34,7 +34,9 @@ Core application module for the `chx` hex editor. Defines the application state 
 | `selection_range` | `pub fn selection_range(&self) -> Option<(usize, usize)>` | Returns the selected byte range (lo, hi) inclusive if in visual mode, or `None` if no selection anchor is set. |
 | `yank_selection` | `pub fn yank_selection(&mut self) -> usize` | Copies selected bytes into the clipboard and clears the selection anchor. Returns the number of bytes yanked (0 if no selection). |
 | `paste` | `pub fn paste(&mut self) -> usize` | Overwrites bytes at cursor with clipboard contents (clamped to buffer length). Returns the number of bytes pasted. |
-| `execute_command` | `pub fn execute_command(&mut self) -> bool` | Parses and executes the current command input. Returns true if the app should quit. Supports `:q`, `:q!`, `:w`, `:wq`, `:goto`/`:g`. |
+| `execute_command` | `pub fn execute_command(&mut self) -> bool` | Parses and executes the current command input. Returns true if the app should quit. Supports `:q`, `:q!`, `:w`, `:wq`, `:goto`/`:g`, `:s/find/replace`, `:columns`/`:cols`, `:marks`. |
+| `bookmarks` | `pub bookmarks: HashMap<char, usize>` | Named offset bookmarks (a-z). Maps bookmark letter to byte offset. |
+| `pending_bookmark` | `pub pending_bookmark: Option<char>` | Tracks two-key bookmark commands: `Some('m')` = set bookmark, `Some('\'')` = jump to bookmark. |
 
 ## Invariants
 
@@ -46,6 +48,8 @@ Core application module for the `chx` hex editor. Defines the application state 
 6. `:q!` always quits regardless of dirty state.
 7. `:wq` only quits if the save succeeds; on save error, it stays open with an error message.
 8. Terminal raw mode and alternate screen are always restored on exit, even on error (cleanup runs unconditionally after `run()`).
+9. Bookmarks are stored per-session in memory (not persisted to disk).
+10. `pending_bookmark` is consumed (taken) at the start of the next key event. Invalid follow-up keys cancel the operation.
 
 ## Behavioral Examples
 
@@ -73,6 +77,16 @@ Core application module for the `chx` hex editor. Defines the application state 
 - Given: command_input is `"foo"`
 - When: `execute_command` is called
 - Then: status message says "Unknown command: foo"
+
+**List bookmarks**
+- Given: bookmarks 'a' at 0x10, 'b' at 0x20
+- When: `:marks` command is executed
+- Then: status message shows "Marks: a:0x10 b:0x20" (sorted alphabetically)
+
+**List bookmarks (empty)**
+- Given: no bookmarks are set
+- When: `:marks` command is executed
+- Then: status message shows "No bookmarks set"
 
 ## Error Cases
 
@@ -104,3 +118,4 @@ Core application module for the `chx` hex editor. Defines the application state 
 |------|-------------|
 | 2026-03-29 | Initial spec |
 | 2026-03-29 | Add Visual mode, selection_range, yank_selection, paste exports |
+| 2026-03-30 | Add bookmarks (HashMap), pending_bookmark, :marks command, :s/find/replace, :columns/:cols |

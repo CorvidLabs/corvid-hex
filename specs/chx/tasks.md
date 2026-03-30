@@ -8,6 +8,11 @@
 - [x] Cursor navigation (relative + absolute)
 - [x] Page up/down
 - [x] Command execution (:q, :q!, :w, :wq, :goto)
+- [x] Visual mode (selection, yank, paste)
+- [x] Undo/redo
+- [x] Configurable columns (:columns/:cols)
+- [x] Search and replace (:s/find/replace)
+- [x] Offset bookmarks (m+letter set, '+letter jump, :marks list)
 
 ## Gaps
 - [ ] None identified

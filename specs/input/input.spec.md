@@ -31,6 +31,8 @@ Translates keyboard events into application actions for a terminal hex editor. A
 7. In Command and Search modes, if Backspace empties the input buffer, the mode reverts to Normal.
 8. EditAscii mode only accepts non-control ASCII characters (`is_ascii()` and no `CONTROL` modifier).
 9. Entering Normal mode from any sub-handler clears mode-specific state (nibble buffer, command input, or search input as applicable).
+10. Two-key bookmark sequences (`m`+letter, `'`+letter) are handled at the top of `handle_normal` before the main match — `pending_bookmark` is consumed first.
+11. Only lowercase a-z are valid bookmark names; any other follow-up key cancels the pending operation.
 
 ## Behavioral Examples
 
@@ -74,6 +76,26 @@ Translates keyboard events into application actions for a terminal hex editor. A
 - When: user presses `j`
 - Then: cursor moves forward by 16 positions
 
+**Set bookmark**
+- Given: app is in Normal mode, cursor at 0x20
+- When: user presses `m` then `a`
+- Then: bookmark 'a' is set at offset 0x20, status shows "Bookmark 'a' set at 0x20"
+
+**Jump to bookmark**
+- Given: bookmark 'a' is set at 0x20, cursor elsewhere
+- When: user presses `'` then `a`
+- Then: cursor moves to 0x20, status shows "Jumped to bookmark 'a'"
+
+**Jump to unset bookmark**
+- Given: no bookmark 'z' exists
+- When: user presses `'` then `z`
+- Then: status shows "Bookmark 'z' not set", cursor unchanged
+
+**Bookmark cancelled by invalid key**
+- Given: user pressed `m` (pending_bookmark is set)
+- When: user presses `1` (non-lowercase letter)
+- Then: pending operation cancelled, status shows "Bookmark cancelled"
+
 ## Error Cases
 
 | Condition | Behavior |
@@ -97,3 +119,4 @@ Translates keyboard events into application actions for a terminal hex editor. A
 | Date | Description |
 |------|-------------|
 | 2026-03-29 | Initial spec |
+| 2026-03-30 | Add bookmark two-key sequences (m+letter, '+letter), Visual mode handler |

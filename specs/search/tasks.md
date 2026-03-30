@@ -4,7 +4,12 @@ spec: search.spec.md
 
 ## Tasks
 
-- [ ] <!-- Add tasks for this spec -->
+- [x] Parse search patterns (ASCII text, hex with 0x prefix, hex with x/ prefix)
+- [x] Hex patterns with spaces (e.g. "0xFF 00 AB")
+- [x] execute_search: find all matches, jump to first
+- [x] next/prev search result cycling
+- [x] execute_replace: find-and-replace with same-length constraint
+- [x] Replace supports both ASCII and hex patterns
 
 ## Gaps
 
