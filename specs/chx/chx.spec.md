@@ -31,6 +31,9 @@ Core application module for the `chx` hex editor. Defines the application state 
 | `move_cursor_to` | `pub fn move_cursor_to(&mut self, pos: usize)` | Moves cursor to an absolute position, clamped to `[0, len-1]`. Calls `ensure_cursor_visible`. |
 | `page_down` | `pub fn page_down(&mut self)` | Moves cursor forward by one page (`visible_rows * bytes_per_row`). |
 | `page_up` | `pub fn page_up(&mut self)` | Moves cursor backward by one page. |
+| `selection_range` | `pub fn selection_range(&self) -> Option<(usize, usize)>` | Returns the selected byte range (lo, hi inclusive) if a visual selection is active, otherwise `None`. |
+| `yank_selection` | `pub fn yank_selection(&mut self) -> usize` | Copies selected bytes into the clipboard and clears the selection anchor. Returns the number of bytes yanked. |
+| `paste` | `pub fn paste(&mut self) -> usize` | Overwrites bytes at the cursor with clipboard contents. Returns the number of bytes pasted. |
 | `execute_command` | `pub fn execute_command(&mut self) -> bool` | Parses and executes the current command input. Returns true if the app should quit. Supports `:q`, `:q!`, `:w`, `:wq`, `:goto`/`:g`. |
 
 ## Invariants
