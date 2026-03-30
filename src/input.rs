@@ -6,6 +6,7 @@ use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 pub fn handle_key(app: &mut App, key: KeyEvent) -> bool {
     match app.mode {
         Mode::Normal => handle_normal(app, key),
+        Mode::Visual => handle_visual(app, key),
         Mode::EditHex => handle_edit_hex(app, key),
         Mode::EditAscii => handle_edit_ascii(app, key),
         Mode::Command => handle_command(app, key),
@@ -98,9 +99,67 @@ fn handle_normal(app: &mut App, key: KeyEvent) -> bool {
             }
         }
 
+        // Visual mode
+        KeyCode::Char('v') => {
+            app.mode = Mode::Visual;
+            app.selection_anchor = Some(app.cursor);
+        }
+
+        // Paste
+        KeyCode::Char('p') => {
+            if app.clipboard.is_empty() {
+                app.status_message = Some("Nothing to paste".to_string());
+            } else {
+                let count = app.paste();
+                app.status_message = Some(format!("Pasted {count} bytes"));
+            }
+        }
+
         // Search navigation
         KeyCode::Char('n') => search::next_search_result(app),
         KeyCode::Char('N') => search::prev_search_result(app),
+
+        _ => {}
+    }
+    false
+}
+
+fn handle_visual(app: &mut App, key: KeyEvent) -> bool {
+    app.status_message = None;
+
+    match key.code {
+        KeyCode::Esc => {
+            app.mode = Mode::Normal;
+            app.selection_anchor = None;
+        }
+
+        // Navigation extends selection
+        KeyCode::Char('h') | KeyCode::Left => app.move_cursor(-1),
+        KeyCode::Char('l') | KeyCode::Right => app.move_cursor(1),
+        KeyCode::Char('k') | KeyCode::Up => app.move_cursor(-(app.bytes_per_row as isize)),
+        KeyCode::Char('j') | KeyCode::Down => app.move_cursor(app.bytes_per_row as isize),
+
+        KeyCode::Home | KeyCode::Char('0') => {
+            let row_start = (app.cursor / app.bytes_per_row) * app.bytes_per_row;
+            app.move_cursor_to(row_start);
+        }
+        KeyCode::End | KeyCode::Char('$') => {
+            let row_end = ((app.cursor / app.bytes_per_row) + 1) * app.bytes_per_row - 1;
+            app.move_cursor_to(row_end);
+        }
+        KeyCode::Char('g') => app.move_cursor_to(0),
+        KeyCode::Char('G') => {
+            if !app.buffer.is_empty() {
+                app.move_cursor_to(app.buffer.len() - 1);
+            }
+        }
+
+        // Yank
+        KeyCode::Char('y') => {
+            let count = app.yank_selection();
+            app.mode = Mode::Normal;
+            app.status_message = Some(format!("Yanked {count} bytes"));
+        }
 
         _ => {}
     }
@@ -441,5 +500,58 @@ mod tests {
         let mut app = make_app(b"test");
         handle_key(&mut app, key(KeyCode::Char('u')));
         assert!(app.status_message.as_ref().unwrap().contains("Nothing to undo"));
+    }
+
+    #[test]
+    fn enter_visual_mode() {
+        let mut app = make_app(b"ABCDEF");
+        app.cursor = 2;
+        handle_key(&mut app, key(KeyCode::Char('v')));
+        assert_eq!(app.mode, Mode::Visual);
+        assert_eq!(app.selection_anchor, Some(2));
+    }
+
+    #[test]
+    fn visual_mode_navigate_and_yank() {
+        let mut app = make_app(b"ABCDEF");
+        app.cursor = 1;
+        // Enter visual mode
+        handle_key(&mut app, key(KeyCode::Char('v')));
+        assert_eq!(app.mode, Mode::Visual);
+        // Extend selection right 2 times
+        handle_key(&mut app, key(KeyCode::Char('l')));
+        handle_key(&mut app, key(KeyCode::Char('l')));
+        assert_eq!(app.cursor, 3);
+        // Yank
+        handle_key(&mut app, key(KeyCode::Char('y')));
+        assert_eq!(app.mode, Mode::Normal);
+        assert_eq!(app.clipboard, vec![b'B', b'C', b'D']);
+    }
+
+    #[test]
+    fn visual_mode_esc_cancels() {
+        let mut app = make_app(b"ABCDEF");
+        handle_key(&mut app, key(KeyCode::Char('v')));
+        handle_key(&mut app, key(KeyCode::Esc));
+        assert_eq!(app.mode, Mode::Normal);
+        assert!(app.selection_anchor.is_none());
+    }
+
+    #[test]
+    fn paste_in_normal_mode() {
+        let mut app = make_app(b"ABCDEF");
+        app.clipboard = vec![b'X', b'Y'];
+        app.cursor = 0;
+        handle_key(&mut app, key(KeyCode::Char('p')));
+        assert_eq!(app.buffer.get(0), Some(b'X'));
+        assert_eq!(app.buffer.get(1), Some(b'Y'));
+        assert!(app.status_message.as_ref().unwrap().contains("Pasted 2"));
+    }
+
+    #[test]
+    fn paste_empty_shows_message() {
+        let mut app = make_app(b"test");
+        handle_key(&mut app, key(KeyCode::Char('p')));
+        assert!(app.status_message.as_ref().unwrap().contains("Nothing to paste"));
     }
 }

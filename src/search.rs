@@ -77,6 +77,47 @@ pub fn next_search_result(app: &mut App) {
     ));
 }
 
+/// Execute search-and-replace: replaces all occurrences of `find` with `replace`.
+/// Both patterns are parsed via parse_search_pattern.
+pub fn execute_replace(app: &mut App, find: &str, replace: &str) {
+    let find_bytes = match parse_search_pattern(find) {
+        Some(b) => b,
+        None => {
+            app.status_message = Some("Invalid find pattern".to_string());
+            return;
+        }
+    };
+    let replace_bytes = match parse_search_pattern(replace) {
+        Some(b) => b,
+        None => {
+            app.status_message = Some("Invalid replace pattern".to_string());
+            return;
+        }
+    };
+
+    if find_bytes.len() != replace_bytes.len() {
+        app.status_message = Some("Find and replace patterns must be same length (overwrite mode)".to_string());
+        return;
+    }
+
+    let mut count = 0usize;
+    let mut pos = 0;
+    while let Some(found) = app.buffer.find(&find_bytes, pos) {
+        for (i, &b) in replace_bytes.iter().enumerate() {
+            app.buffer.set(found + i, b);
+        }
+        count += 1;
+        pos = found + find_bytes.len();
+    }
+
+    if count == 0 {
+        app.status_message = Some(format!("Pattern not found: {find}"));
+    } else {
+        app.search_results.clear();
+        app.status_message = Some(format!("Replaced {count} occurrence{}", if count == 1 { "" } else { "s" }));
+    }
+}
+
 pub fn prev_search_result(app: &mut App) {
     if app.search_results.is_empty() {
         return;
@@ -187,5 +228,66 @@ mod tests {
         prev_search_result(&mut app);
         assert_eq!(app.search_index, 3);
         assert_eq!(app.cursor, 4);
+    }
+
+    #[test]
+    fn replace_ascii() {
+        use std::io::Write;
+        let mut tmp = tempfile::NamedTempFile::new().unwrap();
+        tmp.write_all(b"AABBCC").unwrap();
+        let mut app = App::open(tmp.path().to_str().unwrap()).unwrap();
+
+        execute_replace(&mut app, "BB", "XX");
+        assert_eq!(app.buffer.get(2), Some(b'X'));
+        assert_eq!(app.buffer.get(3), Some(b'X'));
+        assert!(app.status_message.as_ref().unwrap().contains("Replaced 1"));
+    }
+
+    #[test]
+    fn replace_multiple_occurrences() {
+        use std::io::Write;
+        let mut tmp = tempfile::NamedTempFile::new().unwrap();
+        tmp.write_all(b"ABABAB").unwrap();
+        let mut app = App::open(tmp.path().to_str().unwrap()).unwrap();
+
+        execute_replace(&mut app, "AB", "XY");
+        assert_eq!(app.buffer.get(0), Some(b'X'));
+        assert_eq!(app.buffer.get(1), Some(b'Y'));
+        assert_eq!(app.buffer.get(4), Some(b'X'));
+        assert!(app.status_message.as_ref().unwrap().contains("3"));
+    }
+
+    #[test]
+    fn replace_different_lengths_rejected() {
+        use std::io::Write;
+        let mut tmp = tempfile::NamedTempFile::new().unwrap();
+        tmp.write_all(b"AABB").unwrap();
+        let mut app = App::open(tmp.path().to_str().unwrap()).unwrap();
+
+        execute_replace(&mut app, "AA", "X");
+        assert!(app.status_message.as_ref().unwrap().contains("same length"));
+    }
+
+    #[test]
+    fn replace_not_found() {
+        use std::io::Write;
+        let mut tmp = tempfile::NamedTempFile::new().unwrap();
+        tmp.write_all(b"AABB").unwrap();
+        let mut app = App::open(tmp.path().to_str().unwrap()).unwrap();
+
+        execute_replace(&mut app, "ZZ", "XX");
+        assert!(app.status_message.as_ref().unwrap().contains("not found"));
+    }
+
+    #[test]
+    fn replace_hex_patterns() {
+        use std::io::Write;
+        let mut tmp = tempfile::NamedTempFile::new().unwrap();
+        tmp.write_all(&[0xDE, 0xAD, 0xBE, 0xEF]).unwrap();
+        let mut app = App::open(tmp.path().to_str().unwrap()).unwrap();
+
+        execute_replace(&mut app, "0xDEAD", "0xCAFE");
+        assert_eq!(app.buffer.get(0), Some(0xCA));
+        assert_eq!(app.buffer.get(1), Some(0xFE));
     }
 }
