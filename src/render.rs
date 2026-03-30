@@ -74,11 +74,15 @@ fn draw_hex_view(f: &mut Frame, app: &App, area: Rect) {
     let rows = inner.height as usize;
     let bpr = app.bytes_per_row;
 
-    // Build search hit set for quick lookup
-    let search_hits: std::collections::HashSet<usize> = app.search_results.iter().copied().collect();
-    // Current match offset (for highlighting the active match differently)
-    let current_match: Option<usize> = if !app.search_results.is_empty() {
-        Some(app.search_results[app.search_index])
+    // Build search hit set for quick lookup — include all bytes in each match span
+    let pattern_len = app.search_pattern_len.max(1);
+    let search_hits: std::collections::HashSet<usize> = app.search_results.iter()
+        .flat_map(|&start| start..start + pattern_len)
+        .collect();
+    // Current match range (for highlighting the active match differently)
+    let current_match_range: Option<(usize, usize)> = if !app.search_results.is_empty() {
+        let start = app.search_results[app.search_index];
+        Some((start, start + pattern_len))
     } else {
         None
     };
@@ -116,7 +120,7 @@ fn draw_hex_view(f: &mut Frame, app: &App, area: Rect) {
                 let modified = app.buffer.is_modified(offset);
                 let is_cursor = offset == app.cursor;
                 let is_search = search_hits.contains(&offset);
-                let is_current_match = current_match == Some(offset);
+                let is_current_match = current_match_range.is_some_and(|(lo, hi)| offset >= lo && offset < hi);
                 let is_selected = selection.is_some_and(|(lo, hi)| offset >= lo && offset <= hi);
 
                 let hex = format!("{:02X}", byte);
@@ -164,7 +168,7 @@ fn draw_hex_view(f: &mut Frame, app: &App, area: Rect) {
                 let modified = app.buffer.is_modified(offset);
                 let is_cursor = offset == app.cursor;
                 let is_search = search_hits.contains(&offset);
-                let is_current_match = current_match == Some(offset);
+                let is_current_match = current_match_range.is_some_and(|(lo, hi)| offset >= lo && offset < hi);
                 let is_selected = selection.is_some_and(|(lo, hi)| offset >= lo && offset <= hi);
                 let ch = ascii_char(byte).to_string();
 

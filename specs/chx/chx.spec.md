@@ -23,7 +23,7 @@ Core application module for the `chx` hex editor. Defines the application state 
 |--------|-----------|-------------|
 | `Mode` | `pub enum Mode { Normal, Visual, EditHex, EditAscii, Command, Search }` | Represents the current editor mode. Each variant controls input dispatch and UI rendering. |
 | `label` | `pub fn label(&self) -> &'static str` | Returns the display string for the mode (e.g., "NORMAL", "EDIT-HEX"). |
-| `App` | `pub struct App` | Central application state. Holds buffer, mode, cursor, scroll offset, search state, command input, hex nibble tracking, bookmarks, and pending bookmark state. |
+| `App` | `pub struct App` | Central application state. Holds buffer, mode, cursor, scroll offset, search state, command input, hex nibble tracking. Public fields include `bookmarks: HashMap<char, usize>` for named offset bookmarks (a-z) and `pending_bookmark: Option<char>` for two-key bookmark commands. |
 | `open` | `pub fn open(path: &str) -> Result<Self>` | Creates a new App by opening a file into a Buffer. Initializes all state to defaults (Normal mode, cursor at 0, 16 bytes per row). |
 | `cursor_row` | `pub fn cursor_row(&self) -> usize` | Returns the row index of the current cursor position. |
 | `ensure_cursor_visible` | `pub fn ensure_cursor_visible(&mut self)` | Adjusts `scroll_offset` so the cursor row is within the visible viewport. |
