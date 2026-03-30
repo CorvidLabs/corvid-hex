@@ -23,7 +23,7 @@ Core application module for the `chx` hex editor. Defines the application state 
 |--------|-----------|-------------|
 | `Mode` | `pub enum Mode { Normal, Visual, EditHex, EditAscii, Command, Search }` | Represents the current editor mode. Each variant controls input dispatch and UI rendering. |
 | `label` | `pub fn label(&self) -> &'static str` | Returns the display string for the mode (e.g., "NORMAL", "EDIT-HEX"). |
-| `App` | `pub struct App` | Central application state. Holds buffer, mode, cursor, scroll offset, search state, command input, hex nibble tracking, bookmarks, and pending bookmark state. |
+| `App` | `pub struct App` | Central application state. Holds buffer, mode, cursor, scroll offset, search state, command input, hex nibble tracking. Public fields include `bookmarks: HashMap<char, usize>` for named offset bookmarks (a-z) and `pending_bookmark: Option<char>` for two-key bookmark commands. |
 | `open` | `pub fn open(path: &str) -> Result<Self>` | Creates a new App by opening a file into a Buffer. Initializes all state to defaults (Normal mode, cursor at 0, 16 bytes per row). |
 | `cursor_row` | `pub fn cursor_row(&self) -> usize` | Returns the row index of the current cursor position. |
 | `ensure_cursor_visible` | `pub fn ensure_cursor_visible(&mut self)` | Adjusts `scroll_offset` so the cursor row is within the visible viewport. |
@@ -35,8 +35,6 @@ Core application module for the `chx` hex editor. Defines the application state 
 | `yank_selection` | `pub fn yank_selection(&mut self) -> usize` | Copies selected bytes into the clipboard and clears the selection anchor. Returns the number of bytes yanked (0 if no selection). |
 | `paste` | `pub fn paste(&mut self) -> usize` | Overwrites bytes at cursor with clipboard contents (clamped to buffer length). Returns the number of bytes pasted. |
 | `execute_command` | `pub fn execute_command(&mut self) -> bool` | Parses and executes the current command input. Returns true if the app should quit. Supports `:q`, `:q!`, `:w`, `:wq`, `:goto`/`:g`, `:s/find/replace`, `:columns`/`:cols`, `:marks`. |
-| `bookmarks` | `pub bookmarks: HashMap<char, usize>` | Named offset bookmarks (a-z). Maps bookmark letter to byte offset. |
-| `pending_bookmark` | `pub pending_bookmark: Option<char>` | Tracks two-key bookmark commands: `Some('m')` = set bookmark, `Some('\'')` = jump to bookmark. |
 
 ## Invariants
 
