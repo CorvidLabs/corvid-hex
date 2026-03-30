@@ -100,3 +100,119 @@ impl Buffer {
         None
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::io::Write;
+    use tempfile::NamedTempFile;
+
+    fn make_buffer(data: &[u8]) -> Buffer {
+        let mut tmp = NamedTempFile::new().unwrap();
+        tmp.write_all(data).unwrap();
+        Buffer::open(tmp.path().to_str().unwrap()).unwrap()
+    }
+
+    #[test]
+    fn open_reads_file() {
+        let buf = make_buffer(b"Hello");
+        assert_eq!(buf.len(), 5);
+        assert!(!buf.is_empty());
+        assert_eq!(buf.get(0), Some(b'H'));
+        assert_eq!(buf.get(4), Some(b'o'));
+        assert_eq!(buf.get(5), None);
+    }
+
+    #[test]
+    fn open_nonexistent_creates_empty() {
+        let buf = Buffer::open("/tmp/chx_test_nonexistent_file_xyz").unwrap();
+        assert_eq!(buf.len(), 0);
+        assert!(buf.is_empty());
+        assert_eq!(buf.get(0), None);
+    }
+
+    #[test]
+    fn set_and_get_edit() {
+        let mut buf = make_buffer(b"ABCD");
+        assert!(!buf.is_dirty());
+
+        buf.set(1, 0xFF);
+        assert_eq!(buf.get(1), Some(0xFF));
+        assert!(buf.is_modified(1));
+        assert!(buf.is_dirty());
+        assert!(!buf.is_modified(0));
+    }
+
+    #[test]
+    fn set_same_value_removes_edit() {
+        let mut buf = make_buffer(b"ABCD");
+        buf.set(0, 0xFF);
+        assert!(buf.is_modified(0));
+
+        // Set back to original value
+        buf.set(0, b'A');
+        assert!(!buf.is_modified(0));
+        assert!(!buf.is_dirty());
+    }
+
+    #[test]
+    fn set_out_of_bounds_ignored() {
+        let mut buf = make_buffer(b"AB");
+        buf.set(5, 0xFF);
+        assert!(!buf.is_dirty());
+    }
+
+    #[test]
+    fn save_persists_edits() {
+        let mut tmp = NamedTempFile::new().unwrap();
+        tmp.write_all(b"Hello").unwrap();
+        let path = tmp.path().to_str().unwrap().to_string();
+
+        let mut buf = Buffer::open(&path).unwrap();
+        buf.set(0, b'J');
+        buf.save().unwrap();
+
+        assert!(!buf.is_dirty());
+        assert_eq!(buf.get(0), Some(b'J'));
+
+        // Re-read from disk
+        let buf2 = Buffer::open(&path).unwrap();
+        assert_eq!(buf2.get(0), Some(b'J'));
+    }
+
+    #[test]
+    fn find_ascii() {
+        let buf = make_buffer(b"Hello World");
+        assert_eq!(buf.find(b"World", 0), Some(6));
+        assert_eq!(buf.find(b"Hello", 0), Some(0));
+        assert_eq!(buf.find(b"xyz", 0), None);
+    }
+
+    #[test]
+    fn find_respects_start_offset() {
+        let buf = make_buffer(b"abcabc");
+        assert_eq!(buf.find(b"abc", 0), Some(0));
+        assert_eq!(buf.find(b"abc", 1), Some(3));
+        assert_eq!(buf.find(b"abc", 4), None);
+    }
+
+    #[test]
+    fn find_empty_pattern_returns_none() {
+        let buf = make_buffer(b"data");
+        assert_eq!(buf.find(b"", 0), None);
+    }
+
+    #[test]
+    fn find_on_empty_buffer() {
+        let buf = Buffer::open("/tmp/chx_test_nonexistent_xyz").unwrap();
+        assert_eq!(buf.find(b"x", 0), None);
+    }
+
+    #[test]
+    fn find_sees_edits() {
+        let mut buf = make_buffer(b"AAAA");
+        buf.set(2, b'B');
+        buf.set(3, b'B');
+        assert_eq!(buf.find(b"BB", 0), Some(2));
+    }
+}

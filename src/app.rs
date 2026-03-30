@@ -151,3 +151,154 @@ impl App {
         false
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::io::Write;
+
+    fn make_app(data: &[u8]) -> App {
+        let mut tmp = tempfile::NamedTempFile::new().unwrap();
+        tmp.write_all(data).unwrap();
+        App::open(tmp.path().to_str().unwrap()).unwrap()
+    }
+
+    #[test]
+    fn initial_state() {
+        let app = make_app(b"Hello");
+        assert_eq!(app.mode, Mode::Normal);
+        assert_eq!(app.cursor, 0);
+        assert_eq!(app.scroll_offset, 0);
+        assert_eq!(app.bytes_per_row, 16);
+        assert!(!app.buffer.is_dirty());
+    }
+
+    #[test]
+    fn move_cursor_forward_back() {
+        let mut app = make_app(b"ABCDEF");
+        app.move_cursor(3);
+        assert_eq!(app.cursor, 3);
+        app.move_cursor(-1);
+        assert_eq!(app.cursor, 2);
+    }
+
+    #[test]
+    fn move_cursor_clamps_at_zero() {
+        let mut app = make_app(b"ABCD");
+        app.move_cursor(-10);
+        assert_eq!(app.cursor, 0);
+    }
+
+    #[test]
+    fn move_cursor_clamps_at_end() {
+        let mut app = make_app(b"ABCD");
+        app.move_cursor(100);
+        assert_eq!(app.cursor, 3); // len-1
+    }
+
+    #[test]
+    fn move_cursor_to_clamps() {
+        let mut app = make_app(b"ABCD");
+        app.move_cursor_to(999);
+        assert_eq!(app.cursor, 3);
+    }
+
+    #[test]
+    fn ensure_cursor_visible_scrolls_down() {
+        let mut app = make_app(&vec![0u8; 1024]);
+        app.visible_rows = 4;
+        app.bytes_per_row = 16;
+        // Move to row 10
+        app.move_cursor_to(10 * 16);
+        assert!(app.scroll_offset <= 10);
+        assert!(app.scroll_offset + app.visible_rows > 10);
+    }
+
+    #[test]
+    fn page_down_up() {
+        let mut app = make_app(&vec![0u8; 4096]);
+        app.visible_rows = 4;
+        app.page_down();
+        assert_eq!(app.cursor, 4 * 16);
+        app.page_up();
+        assert_eq!(app.cursor, 0);
+    }
+
+    #[test]
+    fn execute_command_quit_clean() {
+        let mut app = make_app(b"test");
+        app.command_input = "q".to_string();
+        assert!(app.execute_command());
+    }
+
+    #[test]
+    fn execute_command_quit_dirty_blocked() {
+        let mut app = make_app(b"test");
+        app.buffer.set(0, 0xFF);
+        app.command_input = "q".to_string();
+        assert!(!app.execute_command());
+        assert!(app.status_message.as_ref().unwrap().contains("Unsaved"));
+    }
+
+    #[test]
+    fn execute_command_force_quit() {
+        let mut app = make_app(b"test");
+        app.buffer.set(0, 0xFF);
+        app.command_input = "q!".to_string();
+        assert!(app.execute_command());
+    }
+
+    #[test]
+    fn execute_command_goto() {
+        let mut app = make_app(&vec![0u8; 256]);
+        app.command_input = "goto 0x10".to_string();
+        app.execute_command();
+        assert_eq!(app.cursor, 0x10);
+    }
+
+    #[test]
+    fn execute_command_goto_short() {
+        let mut app = make_app(&vec![0u8; 256]);
+        app.command_input = "g 20".to_string();
+        app.execute_command();
+        assert_eq!(app.cursor, 0x20);
+    }
+
+    #[test]
+    fn execute_command_unknown() {
+        let mut app = make_app(b"test");
+        app.command_input = "foobar".to_string();
+        app.execute_command();
+        assert!(app.status_message.as_ref().unwrap().contains("Unknown"));
+    }
+
+    #[test]
+    fn execute_command_write() {
+        let mut tmp = tempfile::NamedTempFile::new().unwrap();
+        tmp.write_all(b"test").unwrap();
+        let mut app = App::open(tmp.path().to_str().unwrap()).unwrap();
+        app.buffer.set(0, b'T');
+        app.command_input = "w".to_string();
+        app.execute_command();
+        assert!(!app.buffer.is_dirty());
+        assert!(app.status_message.as_ref().unwrap().contains("Written"));
+    }
+
+    #[test]
+    fn execute_command_wq() {
+        let mut tmp = tempfile::NamedTempFile::new().unwrap();
+        tmp.write_all(b"test").unwrap();
+        let mut app = App::open(tmp.path().to_str().unwrap()).unwrap();
+        app.command_input = "wq".to_string();
+        assert!(app.execute_command());
+    }
+
+    #[test]
+    fn mode_labels() {
+        assert_eq!(Mode::Normal.label(), "NORMAL");
+        assert_eq!(Mode::EditHex.label(), "EDIT-HEX");
+        assert_eq!(Mode::EditAscii.label(), "EDIT-ASCII");
+        assert_eq!(Mode::Command.label(), "COMMAND");
+        assert_eq!(Mode::Search.label(), "SEARCH");
+    }
+}
