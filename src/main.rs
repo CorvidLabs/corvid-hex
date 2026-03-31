@@ -5,6 +5,8 @@
 //! search (hex and text), mouse navigation, and configurable column widths.
 
 mod app;
+mod buffer;
+mod format;
 mod input;
 mod render;
 mod search;
