@@ -8,15 +8,33 @@ A fast, modern TUI hex editor with Vi-style keybindings. Built in Rust with [rat
 
 ## Features
 
+### Core Editing
 - **Vi-style modal editing** — Normal, Edit (Hex/ASCII), Visual, Command, and Search modes
 - **Dual-pane view** — Hex and ASCII side-by-side with syntax coloring
-- **Search** — ASCII and hex pattern search with case-insensitive (`/i`) and incremental highlighting
-- **Search and replace** — `:s/find/replace` for batch byte replacements
 - **Undo/redo** — Full edit history with `u` and `Ctrl-R`
 - **Visual selection** — Select, yank (`y`), and paste (`p`) byte ranges
 - **Bookmarks** — Set with `m<a-z>`, jump with `'<a-z>`, list with `:marks`
 - **Configurable columns** — Set bytes per row via `-c` flag or `:columns` command
-- **Efficient memory model** — Copy-on-open with sparse edit overlay
+- **Mouse support** — Click to position, drag to select, scroll wheel navigation
+
+### Search
+- **ASCII and hex pattern search** — Incremental highlighting with case-insensitive (`/i`) support
+- **Search and replace** — `:s/find/replace` for batch byte replacements
+
+### Analysis Panels
+- **Data inspector** — Multi-type byte interpretation at cursor (u8–u64, i8–i64, f32/f64, both endiannesses, ASCII, binary, octal)
+- **Entropy visualization** — Shannon entropy heatmap overlay showing data randomness per block
+- **String extraction** — `:strings` command to find and navigate ASCII, UTF-8, and UTF-16 strings
+- **Format templates** — Auto-detect and label known binary headers (PNG, ZIP, ELF, PE, Mach-O, SQLite, JPEG, GIF, BMP, WAV, PDF) with custom TOML template support
+
+### Binary Diff
+- **Side-by-side diff mode** — Compare two files byte-by-byte with `chx file1 -d file2`
+- **Diff navigation** — Jump between differences with `]c`/`[c` or `n`/`N`
+- **XOR view** — Toggle XOR overlay to visualize byte differences
+
+### Performance
+- **Memory-mapped I/O** — Large files (>100 MB) loaded via `mmap` for near-instant open times
+- **Efficient memory model** — Copy-on-open with sparse edit overlay for small files
 
 ## Installation
 
@@ -44,13 +62,15 @@ cargo build --release
 
 ```bash
 chx <FILE> [-c <COLUMNS>]
+chx <FILE> -d <FILE2>           # Binary diff mode
 ```
 
 **Examples:**
 
 ```bash
-chx firmware.bin           # Open with default 16 bytes per row
-chx dump.bin -c 32         # Open with 32 bytes per row
+chx firmware.bin                # Open with default 16 bytes per row
+chx dump.bin -c 32              # Open with 32 bytes per row
+chx old.bin -d new.bin          # Compare two files side-by-side
 ```
 
 ## Keybindings
@@ -95,6 +115,16 @@ chx dump.bin -c 32         # Open with 32 bytes per row
 | `y` | Yank selection |
 | `Esc` | Cancel selection |
 
+### Diff Mode
+
+| Key | Action |
+|-----|--------|
+| `h` `j` `k` `l` / Arrows | Navigate |
+| `]c` / `[c` | Next / previous difference |
+| `n` / `N` | Next / previous difference (shortcut) |
+| `x` | Toggle XOR view |
+| `q` / `Esc` | Quit |
+
 ### Commands
 
 | Command | Action |
@@ -107,6 +137,9 @@ chx dump.bin -c 32         # Open with 32 bytes per row
 | `:s/find/replace` | Search and replace |
 | `:columns <n>` / `:cols <n>` | Set bytes per row |
 | `:marks` | List bookmarks |
+| `:strings [min_len]` | Extract and browse strings |
+| `:inspector` | Toggle data inspector panel |
+| `:entropy` | Toggle entropy heatmap overlay |
 
 ### Search
 
@@ -117,6 +150,30 @@ chx dump.bin -c 32         # Open with 32 bytes per row
 | Hex | `/x/DEADBEEF` | Search for hex bytes |
 | Hex (alt) | `/0xDEAD BEEF` | Hex with spaces or `0x` prefix |
 
+## Custom Format Templates
+
+Place TOML files in `~/.config/chx/templates/` to define custom binary format parsers:
+
+```toml
+name = "My Format"
+magic = [0xDE, 0xAD, 0xBE, 0xEF]
+magic_offset = 0
+
+[[fields]]
+name = "Header Magic"
+offset = 0
+size = 4
+field_type = "bytes"
+
+[[fields]]
+name = "Version"
+offset = 4
+size = 2
+field_type = "u16le"
+```
+
+Supported field types: `u8`, `u16le`, `u16be`, `u32le`, `u32be`, `u64le`, `u64be`, `ascii`, `bytes`.
+
 ## Color Scheme
 
 | Color | Meaning |
@@ -124,7 +181,7 @@ chx dump.bin -c 32         # Open with 32 bytes per row
 | Cyan | Printable ASCII bytes |
 | Dark gray | NULL bytes (0x00) |
 | Yellow | Non-printable bytes / search matches |
-| Red | Modified bytes |
+| Red | Modified bytes / diff differences |
 | Magenta | Active search match |
 | Blue | Visual selection |
 | Green | Cursor (edit modes) |
@@ -137,18 +194,24 @@ cargo test                 # Run tests
 cargo clippy               # Lint
 ```
 
-The project uses [spec-sync](https://github.com/CorvidLabs/corvid-hex/tree/main/specs) for module documentation. Each module (`app`, `buffer`, `input`, `render`, `search`) has a corresponding spec in `specs/`.
+The project uses [spec-sync](https://github.com/CorvidLabs/corvid-hex/tree/main/specs) for module documentation. Each module has a corresponding spec in `specs/`.
 
 ## Architecture
 
 ```
 src/
-  main.rs     Entry point, CLI args, terminal setup
-  app.rs      Application state machine and mode management
-  buffer.rs   File I/O with copy-on-open + sparse edit overlay
-  input.rs    Keyboard event handling per mode
-  render.rs   TUI rendering (header, hex view, status bar)
-  search.rs   Pattern matching, search/replace engine
+  main.rs         Entry point, CLI args, terminal setup, diff loop
+  app.rs          Application state machine and mode management
+  buffer.rs       File I/O with mmap + sparse edit overlay
+  input.rs        Keyboard/mouse event handling per mode
+  render.rs       TUI rendering (header, hex view, panels, status bar)
+  search.rs       Pattern matching, search/replace engine
+  diff.rs         Binary diff engine (byte-by-byte comparison, XOR)
+  diff_render.rs  Side-by-side diff TUI rendering
+  entropy.rs      Shannon entropy calculation and heatmap
+  inspector.rs    Multi-type data interpretation at cursor
+  format.rs       Binary format template detection and parsing
+  strings.rs      String extraction (ASCII, UTF-8, UTF-16)
 ```
 
 ## License
