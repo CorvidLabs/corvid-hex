@@ -11,6 +11,7 @@ pub fn handle_key(app: &mut App, key: KeyEvent) -> bool {
         Mode::EditAscii => handle_edit_ascii(app, key),
         Mode::Command => handle_command(app, key),
         Mode::Search => handle_search(app, key),
+        Mode::Strings => handle_strings(app, key),
     }
 }
 
@@ -351,6 +352,86 @@ fn handle_search(app: &mut App, key: KeyEvent) -> bool {
             app.search_input.push(c);
             search::incremental_search(app);
         }
+        _ => {}
+    }
+    false
+}
+
+fn handle_strings(app: &mut App, key: KeyEvent) -> bool {
+    match key.code {
+        // Close panel and return to normal mode
+        KeyCode::Esc | KeyCode::Char('q') => {
+            app.strings_panel.visible = false;
+            app.mode = Mode::Normal;
+        }
+
+        // Navigate down
+        KeyCode::Char('j') | KeyCode::Down => {
+            if !app.strings_panel.results.is_empty() {
+                let max = app.strings_panel.results.len() - 1;
+                if app.strings_panel.selected < max {
+                    app.strings_panel.selected += 1;
+                    app.strings_panel.ensure_selected_visible();
+                }
+            }
+        }
+
+        // Navigate up
+        KeyCode::Char('k') | KeyCode::Up => {
+            if app.strings_panel.selected > 0 {
+                app.strings_panel.selected -= 1;
+                app.strings_panel.ensure_selected_visible();
+            }
+        }
+
+        // Page down
+        KeyCode::PageDown => {
+            if !app.strings_panel.results.is_empty() {
+                let max = app.strings_panel.results.len() - 1;
+                let step = app.strings_panel.visible_rows.saturating_sub(1).max(1);
+                app.strings_panel.selected = (app.strings_panel.selected + step).min(max);
+                app.strings_panel.ensure_selected_visible();
+            }
+        }
+
+        // Page up
+        KeyCode::PageUp => {
+            let step = app.strings_panel.visible_rows.saturating_sub(1).max(1);
+            app.strings_panel.selected = app.strings_panel.selected.saturating_sub(step);
+            app.strings_panel.ensure_selected_visible();
+        }
+
+        // Jump to the selected string's offset in the hex view
+        KeyCode::Enter => {
+            if let Some(entry) = app.strings_panel.results.get(app.strings_panel.selected) {
+                let offset = entry.offset;
+                app.strings_panel.visible = false;
+                app.mode = Mode::Normal;
+                app.move_cursor_to(offset);
+                app.status_message = Some(format!("Jumped to 0x{offset:08X}"));
+            }
+        }
+
+        // Export strings to file
+        KeyCode::Char('x') => {
+            let path = std::path::Path::new("strings.txt");
+            match crate::strings::export_strings(&app.strings_panel.results, path) {
+                Ok(()) => {
+                    let count = app.strings_panel.results.len();
+                    app.status_message = Some(format!("Exported {count} strings to strings.txt"));
+                }
+                Err(e) => {
+                    app.status_message = Some(format!("Export error: {e}"));
+                }
+            }
+        }
+
+        // Allow entering command mode while strings panel is open
+        KeyCode::Char(':') => {
+            app.mode = Mode::Command;
+            app.command_input.clear();
+        }
+
         _ => {}
     }
     false
@@ -804,6 +885,72 @@ mod tests {
         handle_key(&mut app, key(KeyCode::Char('\'')));
         handle_key(&mut app, key(KeyCode::Char('b')));
         assert_eq!(app.cursor, 0x50);
+    }
+
+    #[test]
+    fn strings_mode_esc_closes_panel() {
+        let mut app = make_app(b"Hello World this is a test");
+        app.mode = Mode::Strings;
+        app.strings_panel.visible = true;
+        handle_key(&mut app, key(KeyCode::Esc));
+        assert_eq!(app.mode, Mode::Normal);
+        assert!(!app.strings_panel.visible);
+    }
+
+    #[test]
+    fn strings_mode_navigate_down_up() {
+        use crate::strings::{StringEntry, StringKind};
+        let mut app = make_app(b"test");
+        app.mode = Mode::Strings;
+        app.strings_panel.visible = true;
+        app.strings_panel.results = vec![
+            StringEntry { offset: 0, length: 4, kind: StringKind::Ascii, text: "aaaa".to_string() },
+            StringEntry { offset: 10, length: 4, kind: StringKind::Ascii, text: "bbbb".to_string() },
+            StringEntry { offset: 20, length: 4, kind: StringKind::Ascii, text: "cccc".to_string() },
+        ];
+        app.strings_panel.selected = 0;
+
+        handle_key(&mut app, key(KeyCode::Char('j')));
+        assert_eq!(app.strings_panel.selected, 1);
+
+        handle_key(&mut app, key(KeyCode::Char('j')));
+        assert_eq!(app.strings_panel.selected, 2);
+
+        // Can't go past end
+        handle_key(&mut app, key(KeyCode::Char('j')));
+        assert_eq!(app.strings_panel.selected, 2);
+
+        handle_key(&mut app, key(KeyCode::Char('k')));
+        assert_eq!(app.strings_panel.selected, 1);
+    }
+
+    #[test]
+    fn strings_mode_enter_jumps_to_offset() {
+        use crate::strings::{StringEntry, StringKind};
+        let mut app = make_app(&vec![0u8; 256]);
+        app.mode = Mode::Strings;
+        app.strings_panel.visible = true;
+        app.strings_panel.results = vec![
+            StringEntry { offset: 0x40, length: 4, kind: StringKind::Ascii, text: "test".to_string() },
+        ];
+        app.strings_panel.selected = 0;
+
+        handle_key(&mut app, key(KeyCode::Enter));
+
+        assert_eq!(app.mode, Mode::Normal);
+        assert!(!app.strings_panel.visible);
+        assert_eq!(app.cursor, 0x40);
+        assert!(app.status_message.as_ref().unwrap().contains("0x00000040"));
+    }
+
+    #[test]
+    fn strings_mode_q_closes_panel() {
+        let mut app = make_app(b"test");
+        app.mode = Mode::Strings;
+        app.strings_panel.visible = true;
+        handle_key(&mut app, key(KeyCode::Char('q')));
+        assert_eq!(app.mode, Mode::Normal);
+        assert!(!app.strings_panel.visible);
     }
 
     fn mouse_event(kind: MouseEventKind, col: u16, row: u16) -> MouseEvent {

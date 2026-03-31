@@ -5,6 +5,7 @@ status: draft
 files:
   - src/main.rs
   - src/app.rs
+  - src/strings.rs
 db_tables: []
 depends_on:
   - specs/buffer/buffer.spec.md
@@ -21,7 +22,7 @@ Core application module for the `chx` hex editor. Defines the application state 
 
 | Symbol | Signature | Description |
 |--------|-----------|-------------|
-| `Mode` | `pub enum Mode { Normal, Visual, EditHex, EditAscii, Command, Search }` | Represents the current editor mode. Each variant controls input dispatch and UI rendering. |
+| `Mode` | `pub enum Mode { Normal, Visual, EditHex, EditAscii, Command, Search, Strings }` | Represents the current editor mode. Each variant controls input dispatch and UI rendering. |
 | `label` | `pub fn label(&self) -> &'static str` | Returns the display string for the mode (e.g., "NORMAL", "EDIT-HEX"). |
 | `App` | `pub struct App` | Central application state. Holds buffer, mode, cursor, scroll offset, search state, command input, hex nibble tracking. Public fields include `bookmarks: HashMap<char, usize>` for named offset bookmarks (a-z) and `pending_bookmark: Option<char>` for two-key bookmark commands. |
 | `open` | `pub fn open(path: &str) -> Result<Self>` | Creates a new App by opening a file into a Buffer. Initializes all state to defaults (Normal mode, cursor at 0, 16 bytes per row). |
@@ -34,8 +35,15 @@ Core application module for the `chx` hex editor. Defines the application state 
 | `selection_range` | `pub fn selection_range(&self) -> Option<(usize, usize)>` | Returns the selected byte range (lo, hi) inclusive if in visual mode, or `None` if no selection anchor is set. |
 | `yank_selection` | `pub fn yank_selection(&mut self) -> usize` | Copies selected bytes into the clipboard and clears the selection anchor. Returns the number of bytes yanked (0 if no selection). |
 | `paste` | `pub fn paste(&mut self) -> usize` | Overwrites bytes at cursor with clipboard contents (clamped to buffer length). Returns the number of bytes pasted. |
-| `execute_command` | `pub fn execute_command(&mut self) -> bool` | Parses and executes the current command input. Returns true if the app should quit. Supports `:q`, `:q!`, `:w`, `:wq`, `:goto`/`:g`, `:s/find/replace`, `:columns`/`:cols`, `:marks`. |
+| `execute_command` | `pub fn execute_command(&mut self) -> bool` | Parses and executes the current command input. Returns true if the app should quit. Supports `:q`, `:q!`, `:w`, `:wq`, `:goto`/`:g`, `:s/find/replace`, `:columns`/`:cols`, `:marks`, `:strings`. |
 | `offset_from_screen` | `pub fn offset_from_screen(&self, x: u16, y: u16) -> Option<usize>` | Maps terminal (x, y) screen coordinates to a byte offset. Returns `None` if the click is outside the hex view area or beyond the buffer length. Used for mouse click-to-position. |
+| `StringsPanel` | `pub struct StringsPanel` | State for the strings extraction panel. Contains `visible`, `results: Vec<StringEntry>`, `selected`, `scroll`, `min_length`, and `visible_rows` fields. |
+| `new` (StringsPanel) | `pub fn new() -> Self` | Creates a new `StringsPanel` with default values (not visible, empty results, min_length 4). |
+| `ensure_selected_visible` | `pub fn ensure_selected_visible(&mut self)` | Adjusts `scroll` so the `selected` entry is within the visible viewport of the strings panel. |
+| `StringEntry` | `pub struct StringEntry` | Represents an extracted string with `offset`, `length`, `kind: StringKind`, and `text` fields. |
+| `StringKind` | `pub enum StringKind { Ascii, Utf8, Utf16Le, Utf16Be }` | Classification of an extracted string's encoding. |
+| `extract_strings` | `pub fn extract_strings(data: &[u8], min_length: usize) -> Vec<StringEntry>` | Scans binary data for ASCII, UTF-8, UTF-16 LE, and UTF-16 BE strings of at least `min_length` characters. Returns results sorted by offset. |
+| `export_strings` | `pub fn export_strings(entries: &[StringEntry], path: &Path) -> io::Result<()>` | Writes string entries to a text file in tab-separated format (`offset\tkind\ttext`). |
 
 ## Invariants
 
@@ -106,6 +114,7 @@ Core application module for the `chx` hex editor. Defines the application state 
 | `crate::input` | `handle_key` for keyboard dispatch |
 | `crate::render` | `draw` for TUI rendering |
 | `crate::search` | Search execution (via input handlers) |
+| `crate::strings` | String extraction and export |
 | `clap` | CLI argument parsing (`Parser` derive) |
 | `crossterm` | Terminal raw mode, alternate screen, key events |
 | `ratatui` | TUI framework (`Terminal`, `Frame`, `CrosstermBackend`) |
@@ -119,3 +128,4 @@ Core application module for the `chx` hex editor. Defines the application state 
 | 2026-03-29 | Add Visual mode, selection_range, yank_selection, paste exports |
 | 2026-03-30 | Add bookmarks (HashMap), pending_bookmark, :marks command, :s/find/replace, :columns/:cols |
 | 2026-03-30 | Add offset_from_screen export for mouse coordinate mapping |
+| 2026-03-30 | Add strings extraction: StringsPanel, StringEntry, StringKind, extract_strings, export_strings, Strings mode |

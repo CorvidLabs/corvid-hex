@@ -9,6 +9,7 @@ mod buffer;
 mod input;
 mod render;
 mod search;
+mod strings;
 
 use anyhow::Result;
 use app::App;
