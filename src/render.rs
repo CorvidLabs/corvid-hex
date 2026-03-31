@@ -1,6 +1,6 @@
 use crate::app::{App, Mode};
 use ratatui::prelude::*;
-use ratatui::widgets::{Block, Borders, Paragraph};
+use ratatui::widgets::{Block, Borders, Paragraph, Scrollbar, ScrollbarOrientation, ScrollbarState};
 
 const COLOR_NULL: Color = Color::DarkGray;
 const COLOR_PRINTABLE: Color = Color::Cyan;
@@ -43,13 +43,25 @@ pub fn draw(f: &mut Frame, app: &mut App) {
         .direction(Direction::Vertical)
         .constraints([
             Constraint::Length(1), // Header
-            Constraint::Min(1),   // Hex view
+            Constraint::Min(1),    // Hex view (+ optional strings panel)
             Constraint::Length(1), // Status bar
         ])
         .split(area);
 
     draw_header(f, app, chunks[0]);
-    draw_hex_view(f, app, chunks[1]);
+
+    // When the strings panel is visible, split the main area horizontally
+    if app.strings_panel.visible {
+        let panels = Layout::default()
+            .direction(Direction::Horizontal)
+            .constraints([Constraint::Percentage(60), Constraint::Percentage(40)])
+            .split(chunks[1]);
+        draw_hex_view(f, app, panels[0]);
+        draw_strings_panel(f, app, panels[1]);
+    } else {
+        draw_hex_view(f, app, chunks[1]);
+    }
+
     draw_status_bar(f, app, chunks[2]);
 }
 
@@ -220,12 +232,100 @@ fn draw_hex_view(f: &mut Frame, app: &mut App, area: Rect) {
     }
 }
 
+fn draw_strings_panel(f: &mut Frame, app: &mut App, area: Rect) {
+    let panel = &app.strings_panel;
+    let count = panel.results.len();
+    let title = format!(" Strings ({count}, min:{}) ", panel.min_length);
+
+    let border_style = if app.mode == Mode::Strings {
+        Style::default().fg(Color::Cyan)
+    } else {
+        Style::default().fg(Color::DarkGray)
+    };
+
+    let block = Block::default()
+        .title(title)
+        .borders(Borders::ALL)
+        .border_style(border_style);
+
+    let inner = block.inner(area);
+    f.render_widget(block, area);
+
+    // Cache visible rows for scroll management in input handler
+    app.strings_panel.visible_rows = inner.height as usize;
+
+    let visible_rows = inner.height as usize;
+    let scroll = app.strings_panel.scroll;
+    let selected = app.strings_panel.selected;
+
+    for i in 0..visible_rows {
+        let idx = scroll + i;
+        if idx >= count {
+            break;
+        }
+        let entry = &app.strings_panel.results[idx];
+        let is_selected = idx == selected;
+
+        // Build line: "  0xOFFSET  KIND  text..."
+        let prefix = format!(" {:08X}  {:8}  ", entry.offset, entry.kind.label());
+        let text_space = (inner.width as usize).saturating_sub(prefix.len());
+        let truncated: String = entry.text.chars().take(text_space).collect();
+        let line_text = format!("{prefix}{truncated}");
+
+        let style = if is_selected {
+            Style::default()
+                .fg(Color::Black)
+                .bg(Color::Cyan)
+                .add_modifier(Modifier::BOLD)
+        } else {
+            let kind_color = match entry.kind {
+                crate::strings::StringKind::Ascii => Color::Green,
+                crate::strings::StringKind::Utf8 => Color::Cyan,
+                crate::strings::StringKind::Utf16Le => Color::Yellow,
+                crate::strings::StringKind::Utf16Be => Color::Magenta,
+            };
+            Style::default().fg(kind_color)
+        };
+
+        let y = inner.y + i as u16;
+        f.render_widget(
+            Paragraph::new(line_text).style(style),
+            Rect::new(inner.x, y, inner.width, 1),
+        );
+    }
+
+    // Scrollbar on the right edge (only when content overflows)
+    if count > visible_rows && inner.width > 1 {
+        let mut scrollbar_state = ScrollbarState::new(count.saturating_sub(visible_rows))
+            .position(scroll);
+        let scrollbar = Scrollbar::new(ScrollbarOrientation::VerticalRight);
+        f.render_stateful_widget(
+            scrollbar,
+            Rect::new(area.x + area.width - 1, area.y + 1, 1, area.height.saturating_sub(2)),
+            &mut scrollbar_state,
+        );
+    }
+
+    // Show hint at the bottom when panel is focused
+    if app.mode == Mode::Strings && inner.height > 0 {
+        let hint = " Enter:jump  x:export  Esc:close ";
+        let hint_len = hint.len().min(inner.width as usize) as u16;
+        let hint_x = inner.x + inner.width.saturating_sub(hint_len);
+        let hint_y = area.y + area.height.saturating_sub(1);
+        f.render_widget(
+            Paragraph::new(hint).style(Style::default().fg(Color::DarkGray)),
+            Rect::new(hint_x, hint_y, hint_len, 1),
+        );
+    }
+}
+
 fn draw_status_bar(f: &mut Frame, app: &App, area: Rect) {
     let mode_style = match app.mode {
         Mode::Normal => Style::default().fg(Color::Black).bg(Color::Blue),
         Mode::Visual => Style::default().fg(Color::Black).bg(Color::Yellow),
         Mode::EditHex | Mode::EditAscii => Style::default().fg(Color::Black).bg(Color::Green),
         Mode::Command | Mode::Search => Style::default().fg(Color::Black).bg(Color::Magenta),
+        Mode::Strings => Style::default().fg(Color::Black).bg(Color::Cyan),
     };
 
     let mode_label = format!(" {} ", app.mode.label());

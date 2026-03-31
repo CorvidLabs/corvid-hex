@@ -1,5 +1,6 @@
 use crate::buffer::Buffer;
 use crate::search;
+use crate::strings::{self, StringEntry};
 use anyhow::Result;
 use ratatui::prelude::Rect;
 use std::collections::HashMap;
@@ -12,6 +13,7 @@ pub enum Mode {
     EditAscii,
     Command,
     Search,
+    Strings,
 }
 
 impl Mode {
@@ -23,6 +25,40 @@ impl Mode {
             Mode::EditAscii => "EDIT-ASCII",
             Mode::Command => "COMMAND",
             Mode::Search => "SEARCH",
+            Mode::Strings => "STRINGS",
+        }
+    }
+}
+
+/// State for the strings extraction panel.
+pub struct StringsPanel {
+    pub visible: bool,
+    pub results: Vec<StringEntry>,
+    pub selected: usize,
+    pub scroll: usize,
+    pub min_length: usize,
+    /// Cached visible row count (set during render for scroll management).
+    pub visible_rows: usize,
+}
+
+impl StringsPanel {
+    pub fn new() -> Self {
+        Self {
+            visible: false,
+            results: Vec::new(),
+            selected: 0,
+            scroll: 0,
+            min_length: 4,
+            visible_rows: 20,
+        }
+    }
+
+    /// Ensure the selected entry is visible, adjusting scroll as needed.
+    pub fn ensure_selected_visible(&mut self) {
+        if self.selected < self.scroll {
+            self.scroll = self.selected;
+        } else if self.selected >= self.scroll + self.visible_rows {
+            self.scroll = self.selected.saturating_sub(self.visible_rows - 1);
         }
     }
 }
@@ -55,6 +91,8 @@ pub struct App {
     pub pending_bookmark: Option<char>,
     /// Cached hex view inner area (set during render, used for mouse hit-testing).
     pub hex_view_area: Rect,
+    /// String extraction panel state.
+    pub strings_panel: StringsPanel,
 }
 
 impl App {
@@ -80,6 +118,7 @@ impl App {
             bookmarks: HashMap::new(),
             pending_bookmark: None,
             hex_view_area: Rect::default(),
+            strings_panel: StringsPanel::new(),
         })
     }
 
@@ -292,6 +331,33 @@ impl App {
                         .collect();
                     self.status_message = Some(format!("Marks: {}", list.join(" ")));
                 }
+            }
+            _ if cmd == "strings" || cmd.starts_with("strings ") => {
+                let min_len = if cmd.starts_with("strings ") {
+                    cmd.split_whitespace()
+                        .nth(1)
+                        .and_then(|s| s.parse::<usize>().ok())
+                        .filter(|&n| n >= 1)
+                        .unwrap_or(4)
+                } else {
+                    4
+                };
+                // Collect the full file data (respecting the edit overlay)
+                let data: Vec<u8> =
+                    (0..self.buffer.len()).filter_map(|i| self.buffer.get(i)).collect();
+                let results = strings::extract_strings(&data, min_len);
+                let count = results.len();
+                self.strings_panel = StringsPanel {
+                    visible: true,
+                    results,
+                    selected: 0,
+                    scroll: 0,
+                    min_length: min_len,
+                    visible_rows: self.strings_panel.visible_rows,
+                };
+                self.mode = Mode::Strings;
+                self.status_message =
+                    Some(format!("Found {count} strings (min length: {min_len})"));
             }
             _ if cmd.starts_with("columns ") || cmd.starts_with("cols ") => {
                 let n_str = cmd.split_whitespace().nth(1).unwrap_or("");
@@ -607,6 +673,42 @@ mod tests {
         let count = app.paste();
         assert_eq!(count, 4); // reports clipboard size
         assert_eq!(app.buffer.get(1), Some(b'X')); // only first byte fits within bounds
+    }
+
+    #[test]
+    fn execute_command_strings_default_min_length() {
+        let mut app = make_app(b"\x00\x00Hello World\x00\x00");
+        app.command_input = "strings".to_string();
+        app.execute_command();
+        assert_eq!(app.mode, Mode::Strings);
+        assert!(app.strings_panel.visible);
+        assert_eq!(app.strings_panel.min_length, 4);
+        // Should have found "Hello World" (11 chars)
+        let ascii_count = app
+            .strings_panel
+            .results
+            .iter()
+            .filter(|e| e.text.contains("Hello World"))
+            .count();
+        assert!(ascii_count >= 1);
+    }
+
+    #[test]
+    fn execute_command_strings_custom_min_length() {
+        let mut app = make_app(b"ABCDEFGH");
+        app.command_input = "strings 8".to_string();
+        app.execute_command();
+        assert_eq!(app.strings_panel.min_length, 8);
+        assert!(app.strings_panel.visible);
+    }
+
+    #[test]
+    fn execute_command_strings_invalid_min_length_uses_default() {
+        let mut app = make_app(b"Hello World");
+        app.command_input = "strings 0".to_string();
+        app.execute_command();
+        // 0 is filtered out (< 1), falls back to 4
+        assert_eq!(app.strings_panel.min_length, 4);
     }
 
     #[test]
