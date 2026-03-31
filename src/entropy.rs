@@ -1,25 +1,32 @@
 use crate::buffer::Buffer;
 use ratatui::style::Color;
 
-/// Calculate Shannon entropy for a byte slice.
+/// Calculate Shannon entropy from a frequency table and total byte count.
 /// Returns a value in [0.0, 8.0] bits per byte.
-pub fn calculate_entropy(data: &[u8]) -> f64 {
-    if data.is_empty() {
+pub fn entropy_from_counts(counts: &[u32; 256], total: usize) -> f64 {
+    if total == 0 {
         return 0.0;
     }
-    let mut counts = [0u32; 256];
-    for &b in data {
-        counts[b as usize] += 1;
-    }
-    let len = data.len() as f64;
+    let len = total as f64;
     let mut entropy = 0.0f64;
-    for &count in &counts {
+    for &count in counts {
         if count > 0 {
             let p = count as f64 / len;
             entropy -= p * p.log2();
         }
     }
     entropy
+}
+
+/// Calculate Shannon entropy for a byte slice.
+/// Returns a value in [0.0, 8.0] bits per byte.
+#[allow(dead_code)]
+pub fn calculate_entropy(data: &[u8]) -> f64 {
+    let mut counts = [0u32; 256];
+    for &b in data {
+        counts[b as usize] += 1;
+    }
+    entropy_from_counts(&counts, data.len())
 }
 
 /// Calculate entropy for each window across the buffer.
@@ -29,22 +36,15 @@ pub fn calculate_window_entropies(buffer: &Buffer, window_size: usize) -> Vec<f6
     if len == 0 || window_size == 0 {
         return Vec::new();
     }
-    let num_windows = (len + window_size - 1) / window_size;
+    let num_windows = len.div_ceil(window_size);
     let mut result = Vec::with_capacity(num_windows);
 
     for i in 0..num_windows {
         let start = i * window_size;
         let end = (start + window_size).min(len);
         let counts = buffer.count_bytes_in_range(start, end);
-        let window_len = (end - start) as f64;
-        let mut entropy = 0.0f64;
-        for &count in &counts {
-            if count > 0 {
-                let p = count as f64 / window_len;
-                entropy -= p * p.log2();
-            }
-        }
-        result.push(entropy);
+        let window_len = end - start;
+        result.push(entropy_from_counts(&counts, window_len));
     }
 
     result
