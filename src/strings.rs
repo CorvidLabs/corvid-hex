@@ -23,6 +23,7 @@ impl StringKind {
 #[derive(Debug, Clone)]
 pub struct StringEntry {
     pub offset: usize,
+    #[allow(dead_code)]
     pub length: usize,
     pub kind: StringKind,
     pub text: String,
@@ -62,7 +63,7 @@ fn extract_utf8_strings(data: &[u8], min_length: usize, results: &mut Vec<String
 
             if b < 0x80 {
                 // ASCII byte
-                if (b >= 0x20 && b <= 0x7E) || b == b'\t' || b == b'\n' || b == b'\r' {
+                if (0x20..=0x7E).contains(&b) || b == b'\t' || b == b'\n' || b == b'\r' {
                     text.push(b as char);
                     i += 1;
                 } else {
@@ -149,9 +150,9 @@ fn extract_utf16_strings(
 
             // Accept printable characters: basic ASCII range and most BMP characters
             // (excluding control chars, surrogates 0xD800–0xDFFF, and noncharacters)
-            let printable = (code_unit >= 0x0020 && code_unit <= 0x007E)
-                || (code_unit >= 0x00A0 && code_unit <= 0xD7FF)
-                || (code_unit >= 0xE000 && code_unit <= 0xFFFD);
+            let printable = (0x0020..=0x007E).contains(&code_unit)
+                || (0x00A0..=0xD7FF).contains(&code_unit)
+                || (0xE000..=0xFFFD).contains(&code_unit);
 
             if printable {
                 if let Some(c) = char::from_u32(code_unit as u32) {
