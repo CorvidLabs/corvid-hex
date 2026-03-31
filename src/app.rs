@@ -1,4 +1,5 @@
-use chx::Buffer;
+use crate::buffer::Buffer;
+use crate::format::{self, FormatTemplate, TemplateField};
 use crate::search;
 use crate::strings::{self, StringEntry};
 use anyhow::Result;
@@ -93,11 +94,39 @@ pub struct App {
     pub hex_view_area: Rect,
     /// String extraction panel state.
     pub strings_panel: StringsPanel,
+    /// Detected format template (if any).
+    pub active_template: Option<FormatTemplate>,
+    /// User-loaded custom templates (from ~/.config/chx/templates/).
+    pub custom_templates: Vec<FormatTemplate>,
+    /// Whether the template field overlay is shown.
+    pub show_template_overlay: bool,
+    /// Resolved template fields (static + dynamic chunks).
+    pub template_fields: Vec<TemplateField>,
+    /// byte offset → (field_name, field_index) for O(1) render lookup.
+    pub template_field_map: HashMap<usize, (String, usize)>,
 }
 
 impl App {
     pub fn open(path: &str) -> Result<Self> {
         let buffer = Buffer::open(path)?;
+
+        // Collect enough bytes for magic detection and field resolution.
+        // Limit to 1 MiB to stay fast on huge files.
+        let detect_len = buffer.len().min(1024 * 1024);
+        let data: Vec<u8> = (0..detect_len).filter_map(|i| buffer.get(i)).collect();
+
+        let custom_templates = format::load_custom_templates();
+        let active_template = format::detect_format(&data, &custom_templates);
+        let (template_fields, template_field_map) = if let Some(ref tmpl) = active_template {
+            let fields = tmpl.resolve_fields(&data);
+            let map = format::build_field_map(&fields);
+            (fields, map)
+        } else {
+            (Vec::new(), HashMap::new())
+        };
+        // Auto-enable overlay when a format is detected.
+        let show_template_overlay = active_template.is_some();
+
         Ok(Self {
             buffer,
             mode: Mode::Normal,
@@ -119,7 +148,44 @@ impl App {
             pending_bookmark: None,
             hex_view_area: Rect::default(),
             strings_panel: StringsPanel::new(),
+            active_template,
+            custom_templates,
+            show_template_overlay,
+            template_fields,
+            template_field_map,
         })
+    }
+
+    /// Re-run format detection against the current buffer contents.
+    /// Called by the `:fmt detect` command.
+    pub fn redetect_template(&mut self) {
+        let detect_len = self.buffer.len().min(1024 * 1024);
+        let data: Vec<u8> = (0..detect_len).filter_map(|i| self.buffer.get(i)).collect();
+        self.active_template = format::detect_format(&data, &self.custom_templates);
+        if let Some(ref tmpl) = self.active_template {
+            self.template_fields = tmpl.resolve_fields(&data);
+            self.template_field_map = format::build_field_map(&self.template_fields);
+        } else {
+            self.template_fields.clear();
+            self.template_field_map.clear();
+        }
+    }
+
+    /// Returns a description of the field at the cursor for the status bar,
+    /// or `None` if no field covers the cursor.
+    pub fn template_field_info_at_cursor(&self) -> Option<String> {
+        if !self.show_template_overlay {
+            return None;
+        }
+        let (_, field_idx) = self.template_field_map.get(&self.cursor)?;
+        let field = self.template_fields.get(*field_idx)?;
+        let end = field.offset + field.size;
+        if end > self.buffer.len() {
+            return Some(format!("[{}]: (out of range)", field.name));
+        }
+        let bytes: Vec<u8> = (field.offset..end).filter_map(|i| self.buffer.get(i)).collect();
+        let value = format::parse_field_value(field, &bytes);
+        Some(format!("[{}]: {}", field.name, value))
     }
 
     pub fn cursor_row(&self) -> usize {
@@ -373,6 +439,47 @@ impl App {
                         self.status_message = Some("Usage: columns <n> (n >= 1)".to_string());
                     }
                 }
+            }
+            "fmt" | "template" => {
+                // Toggle overlay on/off
+                self.show_template_overlay = !self.show_template_overlay;
+                let state = if self.show_template_overlay { "on" } else { "off" };
+                let name = self
+                    .active_template
+                    .as_ref()
+                    .map(|t| t.name.as_str())
+                    .unwrap_or("none");
+                self.status_message = Some(format!("Template overlay {state} ({name})"));
+            }
+            "fmt on" | "template on" => {
+                self.show_template_overlay = true;
+                let name = self
+                    .active_template
+                    .as_ref()
+                    .map(|t| t.name.as_str())
+                    .unwrap_or("none");
+                self.status_message = Some(format!("Template overlay on ({name})"));
+            }
+            "fmt off" | "template off" => {
+                self.show_template_overlay = false;
+                self.status_message = Some("Template overlay off".to_string());
+            }
+            "fmt detect" | "template detect" => {
+                self.redetect_template();
+                let name = self
+                    .active_template
+                    .as_ref()
+                    .map(|t| t.name.as_str())
+                    .unwrap_or("unknown");
+                self.status_message = Some(format!("Detected: {name}"));
+            }
+            "fmt list" | "template list" => {
+                let builtins: Vec<String> = format::builtin_templates()
+                    .iter()
+                    .map(|t| t.name.clone())
+                    .collect();
+                self.status_message =
+                    Some(format!("Templates: {}", builtins.join(", ")));
             }
             _ => {
                 self.status_message = Some(format!("Unknown command: {cmd}"));

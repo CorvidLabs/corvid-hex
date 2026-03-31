@@ -13,6 +13,19 @@ const COLOR_SEARCH_BG: Color = Color::Yellow;
 const COLOR_CURRENT_MATCH_BG: Color = Color::Magenta;
 const COLOR_SELECTION_BG: Color = Color::Blue;
 
+/// Cycling color palette for template field highlighting.
+/// Each (fg, bg) pair is used for fields by index modulo palette length.
+const TEMPLATE_PALETTE: &[(Color, Color)] = &[
+    (Color::Black, Color::LightGreen),
+    (Color::Black, Color::LightBlue),
+    (Color::Black, Color::LightMagenta),
+    (Color::Black, Color::LightCyan),
+    (Color::Black, Color::LightYellow),
+    (Color::White, Color::Green),
+    (Color::White, Color::Blue),
+    (Color::White, Color::Magenta),
+];
+
 fn byte_color(b: u8, modified: bool) -> Color {
     if modified {
         COLOR_MODIFIED
@@ -142,6 +155,11 @@ fn draw_hex_view(f: &mut Frame, app: &mut App, area: Rect) {
                 let is_search = search_hits.contains(&offset);
                 let is_current_match = current_match_range.is_some_and(|(lo, hi)| offset >= lo && offset < hi);
                 let is_selected = selection.is_some_and(|(lo, hi)| offset >= lo && offset <= hi);
+                let template_field = if app.show_template_overlay {
+                    app.template_field_map.get(&offset)
+                } else {
+                    None
+                };
 
                 let hex = format!("{:02X}", byte);
 
@@ -161,6 +179,9 @@ fn draw_hex_view(f: &mut Frame, app: &mut App, area: Rect) {
                     Style::default().fg(COLOR_SEARCH_HIT).bg(COLOR_CURRENT_MATCH_BG).add_modifier(Modifier::BOLD)
                 } else if is_search {
                     Style::default().fg(COLOR_SEARCH_HIT).bg(COLOR_SEARCH_BG)
+                } else if let Some((_, field_idx)) = template_field {
+                    let (fg, bg) = TEMPLATE_PALETTE[field_idx % TEMPLATE_PALETTE.len()];
+                    Style::default().fg(fg).bg(bg)
                 } else {
                     Style::default().fg(byte_color(byte, modified))
                 };
@@ -193,6 +214,11 @@ fn draw_hex_view(f: &mut Frame, app: &mut App, area: Rect) {
                 let is_search = search_hits.contains(&offset);
                 let is_current_match = current_match_range.is_some_and(|(lo, hi)| offset >= lo && offset < hi);
                 let is_selected = selection.is_some_and(|(lo, hi)| offset >= lo && offset <= hi);
+                let template_field = if app.show_template_overlay {
+                    app.template_field_map.get(&offset)
+                } else {
+                    None
+                };
                 let ch = ascii_char(byte).to_string();
 
                 let style = if is_cursor {
@@ -211,6 +237,9 @@ fn draw_hex_view(f: &mut Frame, app: &mut App, area: Rect) {
                     Style::default().fg(COLOR_SEARCH_HIT).bg(COLOR_CURRENT_MATCH_BG).add_modifier(Modifier::BOLD)
                 } else if is_search {
                     Style::default().fg(COLOR_SEARCH_HIT).bg(COLOR_SEARCH_BG)
+                } else if let Some((_, field_idx)) = template_field {
+                    let (fg, bg) = TEMPLATE_PALETTE[field_idx % TEMPLATE_PALETTE.len()];
+                    Style::default().fg(fg).bg(bg)
                 } else {
                     Style::default().fg(byte_color(byte, modified))
                 };
@@ -334,8 +363,8 @@ fn draw_status_bar(f: &mut Frame, app: &App, area: Rect) {
         Mode::Command => format!(":{}", app.command_input),
         Mode::Search => format!("/{}", app.search_input),
         _ => app
-            .status_message
-            .clone()
+            .template_field_info_at_cursor()
+            .or_else(|| app.status_message.clone())
             .unwrap_or_default(),
     };
 
