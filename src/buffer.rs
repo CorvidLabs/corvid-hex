@@ -283,6 +283,23 @@ impl Buffer {
         Ok(())
     }
 
+    /// Count byte value frequencies in [start, end), applying any edits.
+    pub fn count_bytes_in_range(&self, start: usize, end: usize) -> [u32; 256] {
+        let end = end.min(self.backing.len());
+        let mut counts = [0u32; 256];
+        if start >= end {
+            return counts;
+        }
+        for pos in start..end {
+            // Use the edited byte if present, otherwise the backing store.
+            let b = self.edits.get(&pos).copied()
+                .or_else(|| self.backing.get(pos))
+                .unwrap_or(0);
+            counts[b as usize] += 1;
+        }
+        counts
+    }
+
     /// Search for a byte pattern starting from an offset.
     pub fn find(&self, pattern: &[u8], start: usize) -> Option<usize> {
         if pattern.is_empty() || self.is_empty() {
@@ -487,6 +504,31 @@ mod tests {
         assert_eq!(buf.get(1), Some(0x02));
         buf.redo(); // restore offset 2
         assert_eq!(buf.get(2), Some(0x03));
+    }
+
+    #[test]
+    fn count_bytes_in_range_basic() {
+        let buf = make_buffer(b"AABB");
+        let counts = buf.count_bytes_in_range(0, 4);
+        assert_eq!(counts[b'A' as usize], 2);
+        assert_eq!(counts[b'B' as usize], 2);
+    }
+
+    #[test]
+    fn count_bytes_in_range_with_edit() {
+        let mut buf = make_buffer(b"AAAA");
+        buf.set(0, b'X');
+        let counts = buf.count_bytes_in_range(0, 4);
+        assert_eq!(counts[b'A' as usize], 3);
+        assert_eq!(counts[b'X' as usize], 1);
+    }
+
+    #[test]
+    fn count_bytes_in_range_subrange() {
+        let buf = make_buffer(b"AABBCC");
+        let counts = buf.count_bytes_in_range(2, 4);
+        assert_eq!(counts[b'A' as usize], 0);
+        assert_eq!(counts[b'B' as usize], 2);
     }
 
     #[test]

@@ -104,6 +104,14 @@ pub struct App {
     pub template_fields: Vec<TemplateField>,
     /// byte offset → (field_name, field_index) for O(1) render lookup.
     pub template_field_map: HashMap<usize, (String, usize)>,
+    /// Whether to show the entropy visualization panel.
+    pub show_entropy: bool,
+    /// Window size for entropy calculation in bytes (default 256).
+    pub entropy_window_size: usize,
+    /// Cached entropy values (one per entropy_window_size block). Cleared on window size change.
+    pub entropy_cache: Vec<f64>,
+    /// Cached entropy panel area (set during render, used for mouse hit-testing).
+    pub entropy_panel_area: Rect,
 }
 
 impl App {
@@ -153,6 +161,10 @@ impl App {
             show_template_overlay,
             template_fields,
             template_field_map,
+            show_entropy: false,
+            entropy_window_size: 256,
+            entropy_cache: Vec::new(),
+            entropy_panel_area: Rect::default(),
         })
     }
 
@@ -481,6 +493,29 @@ impl App {
                 self.status_message =
                     Some(format!("Templates: {}", builtins.join(", ")));
             }
+            "entropy" => {
+                self.show_entropy = !self.show_entropy;
+                if self.show_entropy && self.entropy_cache.is_empty() {
+                    // Cache populated on next render.
+                }
+                let state = if self.show_entropy { "on" } else { "off" };
+                self.status_message = Some(format!("Entropy view {state}"));
+            }
+            _ if cmd.starts_with("entropy ") => {
+                let n_str = cmd.split_whitespace().nth(1).unwrap_or("");
+                match n_str.parse::<usize>() {
+                    Ok(n) if n >= 1 => {
+                        self.entropy_window_size = n;
+                        self.entropy_cache.clear();
+                        self.show_entropy = true;
+                        self.status_message = Some(format!("Entropy window: {n} bytes"));
+                    }
+                    _ => {
+                        self.status_message =
+                            Some("Usage: entropy [window_size_bytes]".to_string());
+                    }
+                }
+            }
             _ => {
                 self.status_message = Some(format!("Unknown command: {cmd}"));
             }
@@ -732,6 +767,38 @@ mod tests {
         app.command_input = "cols 8".to_string();
         app.execute_command();
         assert_eq!(app.bytes_per_row, 8);
+    }
+
+    #[test]
+    fn execute_command_entropy_toggle() {
+        let mut app = make_app(b"test");
+        assert!(!app.show_entropy);
+        app.command_input = "entropy".to_string();
+        app.execute_command();
+        assert!(app.show_entropy);
+        assert!(app.status_message.as_ref().unwrap().contains("on"));
+        app.command_input = "entropy".to_string();
+        app.execute_command();
+        assert!(!app.show_entropy);
+        assert!(app.status_message.as_ref().unwrap().contains("off"));
+    }
+
+    #[test]
+    fn execute_command_entropy_window_size() {
+        let mut app = make_app(b"test");
+        app.command_input = "entropy 512".to_string();
+        app.execute_command();
+        assert_eq!(app.entropy_window_size, 512);
+        assert!(app.show_entropy);
+        assert!(app.status_message.as_ref().unwrap().contains("512"));
+    }
+
+    #[test]
+    fn execute_command_entropy_invalid_window() {
+        let mut app = make_app(b"test");
+        app.command_input = "entropy 0".to_string();
+        app.execute_command();
+        assert!(app.status_message.as_ref().unwrap().contains("Usage"));
     }
 
     #[test]

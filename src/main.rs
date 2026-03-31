@@ -6,6 +6,7 @@
 
 mod app;
 mod buffer;
+mod entropy;
 mod format;
 mod input;
 mod render;

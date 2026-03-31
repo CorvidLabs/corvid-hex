@@ -1,4 +1,5 @@
 use crate::app::{App, Mode};
+use crate::entropy;
 use ratatui::prelude::*;
 use ratatui::widgets::{Block, Borders, Paragraph, Scrollbar, ScrollbarOrientation, ScrollbarState};
 
@@ -46,36 +47,56 @@ fn ascii_char(b: u8) -> char {
     }
 }
 
+/// Width of the entropy panel in columns (border + bar + border).
+const ENTROPY_PANEL_WIDTH: u16 = 3;
+
 pub fn draw(f: &mut Frame, app: &mut App) {
     let area = f.area();
 
     // Update visible rows based on terminal height (minus 2 for header + status)
     app.visible_rows = area.height.saturating_sub(3) as usize;
 
-    let chunks = Layout::default()
+    let v_chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
             Constraint::Length(1), // Header
-            Constraint::Min(1),    // Hex view (+ optional strings panel)
+            Constraint::Min(1),    // Hex view (+ optional strings/entropy panels)
             Constraint::Length(1), // Status bar
         ])
         .split(area);
 
-    draw_header(f, app, chunks[0]);
+    draw_header(f, app, v_chunks[0]);
 
-    // When the strings panel is visible, split the main area horizontally
+    // Determine the main content area, potentially split for the entropy panel.
+    let hex_area = if app.show_entropy && area.width > ENTROPY_PANEL_WIDTH + 20 {
+        let h_chunks = Layout::default()
+            .direction(Direction::Horizontal)
+            .constraints([
+                Constraint::Min(20),                     // Hex view
+                Constraint::Length(ENTROPY_PANEL_WIDTH), // Entropy panel
+            ])
+            .split(v_chunks[1]);
+        draw_entropy_panel(f, app, h_chunks[1]);
+        h_chunks[0]
+    } else {
+        // Reset entropy panel area when hidden so mouse clicks don't land there.
+        app.entropy_panel_area = Rect::default();
+        v_chunks[1]
+    };
+
+    // When the strings panel is visible, split the hex area horizontally.
     if app.strings_panel.visible {
         let panels = Layout::default()
             .direction(Direction::Horizontal)
             .constraints([Constraint::Percentage(60), Constraint::Percentage(40)])
-            .split(chunks[1]);
+            .split(hex_area);
         draw_hex_view(f, app, panels[0]);
         draw_strings_panel(f, app, panels[1]);
     } else {
-        draw_hex_view(f, app, chunks[1]);
+        draw_hex_view(f, app, hex_area);
     }
 
-    draw_status_bar(f, app, chunks[2]);
+    draw_status_bar(f, app, v_chunks[2]);
 }
 
 fn draw_header(f: &mut Frame, app: &App, area: Rect) {
@@ -344,6 +365,67 @@ fn draw_strings_panel(f: &mut Frame, app: &mut App, area: Rect) {
         f.render_widget(
             Paragraph::new(hint).style(Style::default().fg(Color::DarkGray)),
             Rect::new(hint_x, hint_y, hint_len, 1),
+        );
+    }
+}
+
+fn draw_entropy_panel(f: &mut Frame, app: &mut App, area: Rect) {
+    // Populate the entropy cache if needed.
+    if app.entropy_cache.is_empty() && !app.buffer.is_empty() {
+        app.entropy_cache =
+            entropy::calculate_window_entropies(&app.buffer, app.entropy_window_size);
+    }
+
+    // Cache panel area for mouse hit-testing.
+    app.entropy_panel_area = area;
+
+    let panel_height = area.height as usize;
+    let file_len = app.buffer.len();
+    let cursor = app.cursor;
+
+    for row in 0..panel_height {
+        let y = area.y + row as u16;
+
+        // Map this panel row to a byte range in the file.
+        let seg_start = (row * file_len) / panel_height;
+        let seg_end = ((row + 1) * file_len) / panel_height;
+        let seg_end = seg_end.max(seg_start + 1).min(file_len);
+
+        let avg_entropy = entropy::average_entropy_for_range(
+            &app.entropy_cache,
+            app.entropy_window_size,
+            seg_start,
+            seg_end,
+        );
+
+        let is_cursor_row = cursor >= seg_start && cursor < seg_end;
+
+        let bar_color = entropy::entropy_color(avg_entropy);
+
+        // Left border character.
+        f.render_widget(
+            Paragraph::new("│").style(Style::default().fg(Color::DarkGray)),
+            Rect::new(area.x, y, 1, 1),
+        );
+
+        // Colored bar cell.
+        let (bar_char, style) = if is_cursor_row {
+            (
+                "▶",
+                Style::default().fg(Color::White).bg(bar_color).add_modifier(Modifier::BOLD),
+            )
+        } else {
+            (" ", Style::default().bg(bar_color))
+        };
+        f.render_widget(
+            Paragraph::new(bar_char).style(style),
+            Rect::new(area.x + 1, y, 1, 1),
+        );
+
+        // Right border / padding.
+        f.render_widget(
+            Paragraph::new(" ").style(Style::default()),
+            Rect::new(area.x + 2, y, 1, 1),
         );
     }
 }
