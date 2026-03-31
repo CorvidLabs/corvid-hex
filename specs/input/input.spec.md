@@ -10,7 +10,7 @@ depends_on: []
 
 ## Purpose
 
-Translates keyboard events into application actions for a terminal hex editor. Acts as the central input dispatcher, routing key events to mode-specific handlers (Normal, EditHex, EditAscii, Command, Search) and returning a quit signal when appropriate.
+Translates keyboard events into application actions for a terminal hex editor. Acts as the central input dispatcher, routing key events to mode-specific handlers (Normal, Visual, EditHex, EditAscii, Command, Search, Inspector, InspectorEdit) and returning a quit signal when appropriate.
 
 ## Public API
 
@@ -107,6 +107,7 @@ Translates keyboard events into application actions for a terminal hex editor. A
 | Module | Symbols Used | Purpose |
 |--------|-------------|---------|
 | `crate::app` | `App`, `Mode` | Application state and mode enum |
+| `crate::inspector` | `interpret` | Field interpretation for inspector editing |
 | `crate::search` | `next_search_result`, `prev_search_result`, `execute_search` | Search execution and result navigation |
 | `crossterm::event` | `KeyCode`, `KeyEvent`, `KeyModifiers`, `MouseEvent`, `MouseEventKind`, `MouseButton` | Keyboard and mouse event types |
 
@@ -117,3 +118,4 @@ Translates keyboard events into application actions for a terminal hex editor. A
 | 2026-03-29 | Initial spec |
 | 2026-03-30 | Add bookmark two-key sequences (m+letter, '+letter), Visual mode handler |
 | 2026-03-30 | Add handle_mouse export for mouse click, drag, and scroll support |
+| 2026-03-30 | Add Inspector and InspectorEdit mode handlers |

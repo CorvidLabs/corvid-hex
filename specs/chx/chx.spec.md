@@ -10,6 +10,7 @@ db_tables: []
 depends_on:
   - specs/buffer/buffer.spec.md
   - specs/input/input.spec.md
+  - specs/inspector/inspector.spec.md
   - specs/render/render.spec.md
   - specs/search/search.spec.md
 ---
@@ -22,9 +23,9 @@ Core application module for the `chx` hex editor. Defines the application state 
 
 | Symbol | Signature | Description |
 |--------|-----------|-------------|
-| `Mode` | `pub enum Mode { Normal, Visual, EditHex, EditAscii, Command, Search, Strings }` | Represents the current editor mode. Each variant controls input dispatch and UI rendering. |
+| `Mode` | `pub enum Mode { Normal, Visual, EditHex, EditAscii, Command, Search, Strings, Inspector, InspectorEdit }` | Represents the current editor mode. Each variant controls input dispatch and UI rendering. |
 | `label` | `pub fn label(&self) -> &'static str` | Returns the display string for the mode (e.g., "NORMAL", "EDIT-HEX"). |
-| `App` | `pub struct App` | Central application state. Holds buffer, mode, cursor, scroll offset, search state, command input, hex nibble tracking. Public fields include `bookmarks: HashMap<char, usize>` for named offset bookmarks (a-z) and `pending_bookmark: Option<char>` for two-key bookmark commands. |
+| `App` | `pub struct App` | Central application state. Holds buffer, mode, cursor, scroll offset, search state, command input, hex nibble tracking, inspector state. Public fields include `bookmarks: HashMap<char, usize>` for named offset bookmarks (a-z), `pending_bookmark: Option<char>` for two-key bookmark commands, `inspector_visible: bool`, `inspector_field: usize`, and `inspector_input: String`. |
 | `open` | `pub fn open(path: &str) -> Result<Self>` | Creates a new App by opening a file into a Buffer. Initializes all state to defaults (Normal mode, cursor at 0, 16 bytes per row). |
 | `cursor_row` | `pub fn cursor_row(&self) -> usize` | Returns the row index of the current cursor position. |
 | `ensure_cursor_visible` | `pub fn ensure_cursor_visible(&mut self)` | Adjusts `scroll_offset` so the cursor row is within the visible viewport. |
@@ -35,7 +36,7 @@ Core application module for the `chx` hex editor. Defines the application state 
 | `selection_range` | `pub fn selection_range(&self) -> Option<(usize, usize)>` | Returns the selected byte range (lo, hi) inclusive if in visual mode, or `None` if no selection anchor is set. |
 | `yank_selection` | `pub fn yank_selection(&mut self) -> usize` | Copies selected bytes into the clipboard and clears the selection anchor. Returns the number of bytes yanked (0 if no selection). |
 | `paste` | `pub fn paste(&mut self) -> usize` | Overwrites bytes at cursor with clipboard contents (clamped to buffer length). Returns the number of bytes pasted. |
-| `execute_command` | `pub fn execute_command(&mut self) -> bool` | Parses and executes the current command input. Returns true if the app should quit. Supports `:q`, `:q!`, `:w`, `:wq`, `:goto`/`:g`, `:s/find/replace`, `:columns`/`:cols`, `:marks`, `:strings`. |
+| `execute_command` | `pub fn execute_command(&mut self) -> bool` | Parses and executes the current command input. Returns true if the app should quit. Supports `:q`, `:q!`, `:w`, `:wq`, `:goto`/`:g`, `:s/find/replace`, `:columns`/`:cols`, `:marks`, `:strings`, `:inspector`/`:inspector on`/`:inspector off`. |
 | `offset_from_screen` | `pub fn offset_from_screen(&self, x: u16, y: u16) -> Option<usize>` | Maps terminal (x, y) screen coordinates to a byte offset. Returns `None` if the click is outside the hex view area or beyond the buffer length. Used for mouse click-to-position. |
 | `StringsPanel` | `pub struct StringsPanel` | State for the strings extraction panel. Contains `visible`, `results: Vec<StringEntry>`, `selected`, `scroll`, `min_length`, and `visible_rows` fields. |
 | `new` (StringsPanel) | `pub fn new() -> Self` | Creates a new `StringsPanel` with default values (not visible, empty results, min_length 4). |
@@ -129,3 +130,4 @@ Core application module for the `chx` hex editor. Defines the application state 
 | 2026-03-30 | Add bookmarks (HashMap), pending_bookmark, :marks command, :s/find/replace, :columns/:cols |
 | 2026-03-30 | Add offset_from_screen export for mouse coordinate mapping |
 | 2026-03-30 | Add strings extraction: StringsPanel, StringEntry, StringKind, extract_strings, export_strings, Strings mode |
+| 2026-03-30 | Add Inspector/InspectorEdit modes, inspector state fields, :inspector command |

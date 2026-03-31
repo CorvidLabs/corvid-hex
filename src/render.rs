@@ -421,7 +421,7 @@ fn draw_inspector(f: &mut Frame, app: &App, area: Rect) {
     // Separator under offset
     let sep_line = "─".repeat(inner.width as usize);
     f.render_widget(
-        Paragraph::new(sep_line.clone()).style(Style::default().fg(Color::DarkGray)),
+        Paragraph::new(sep_line).style(Style::default().fg(Color::DarkGray)),
         Rect::new(inner.x, inner.y + 1, inner.width, 1),
     );
 

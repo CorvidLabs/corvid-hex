@@ -10,7 +10,7 @@ depends_on: []
 
 ## Purpose
 
-Renders the terminal UI for the hex editor. This module owns the full-screen layout — a header bar showing file metadata, a scrollable hex/ASCII view with syntax coloring and cursor highlighting, and a modal status bar — and translates `App` state into styled `ratatui` widgets each frame.
+Renders the terminal UI for the hex editor. This module owns the full-screen layout — a header bar showing file metadata, a scrollable hex/ASCII view with syntax coloring and cursor highlighting, an optional data inspector panel, and a modal status bar — and translates `App` state into styled `ratatui` widgets each frame.
 
 ## Public API
 
@@ -76,7 +76,8 @@ Renders the terminal UI for the hex editor. This module owns the full-screen lay
 | Dependency | Usage |
 |------------|-------|
 | `crate::app::App` | Entire application state: buffer, cursor, mode, scroll offset, search results, command/search input, status message. Mutated to update `visible_rows`. |
-| `crate::app::Mode` | Enum (`Normal`, `EditHex`, `EditAscii`, `Command`, `Search`) used for cursor styling and status-bar mode display. |
+| `crate::app::Mode` | Enum (`Normal`, `Visual`, `EditHex`, `EditAscii`, `Command`, `Search`, `Inspector`, `InspectorEdit`) used for cursor styling and status-bar mode display. |
+| `crate::inspector` | `interpret` function for generating inspector panel field data. |
 | `ratatui::prelude::*` | Core TUI types: `Frame`, `Layout`, `Direction`, `Constraint`, `Rect`, `Style`, `Color`, `Modifier`, `Span`, `Line`. |
 | `ratatui::widgets::{Block, Borders, Paragraph}` | Widgets used to compose the header, hex view container, and status bar. |
 
@@ -85,3 +86,4 @@ Renders the terminal UI for the hex editor. This module owns the full-screen lay
 | Date | Description |
 |------|-------------|
 | 2026-03-29 | Initial spec |
+| 2026-03-30 | Add inspector panel rendering, Inspector/InspectorEdit mode support in status bar |
