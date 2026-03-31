@@ -904,4 +904,82 @@ mod tests {
         handle_mouse(&mut app, mouse_event(MouseEventKind::Down(MouseButton::Left), 2, 1));
         assert_eq!(app.cursor, 5);
     }
+
+    #[test]
+    fn ctrl_u_half_page_up() {
+        let mut app = make_app(&vec![0u8; 4096]);
+        app.visible_rows = 10;
+        // Move down first
+        app.move_cursor_to(5 * 16);
+        // Ctrl-U should move up half a page (5 rows * 16 bytes)
+        handle_key(&mut app, key_ctrl(KeyCode::Char('u')));
+        assert_eq!(app.cursor, 0);
+    }
+
+    #[test]
+    fn page_down_and_page_up() {
+        let mut app = make_app(&vec![0u8; 4096]);
+        app.visible_rows = 4;
+        // PageDown moves a full page (4 rows * 16 bytes = 64 bytes)
+        handle_key(&mut app, key(KeyCode::PageDown));
+        assert_eq!(app.cursor, 4 * 16);
+        // PageUp returns to start
+        handle_key(&mut app, key(KeyCode::PageUp));
+        assert_eq!(app.cursor, 0);
+    }
+
+    #[test]
+    fn quit_dirty_buffer_blocked() {
+        let mut app = make_app(b"\x00");
+        // Write a byte to mark buffer dirty
+        app.mode = Mode::EditHex;
+        handle_key(&mut app, key(KeyCode::Char('F')));
+        handle_key(&mut app, key(KeyCode::Char('F')));
+        app.mode = Mode::Normal;
+
+        // :q on dirty buffer must NOT quit
+        handle_key(&mut app, key(KeyCode::Char(':')));
+        handle_key(&mut app, key(KeyCode::Char('q')));
+        let quit = handle_key(&mut app, key(KeyCode::Enter));
+        assert!(!quit);
+        assert!(app
+            .status_message
+            .as_ref()
+            .unwrap()
+            .contains("Unsaved changes"));
+    }
+
+    #[test]
+    fn quit_force_dirty_buffer() {
+        let mut app = make_app(b"\x00");
+        // Dirty the buffer
+        app.mode = Mode::EditHex;
+        handle_key(&mut app, key(KeyCode::Char('A')));
+        handle_key(&mut app, key(KeyCode::Char('B')));
+        app.mode = Mode::Normal;
+
+        // :q! must quit even with unsaved changes
+        handle_key(&mut app, key(KeyCode::Char(':')));
+        for c in "q!".chars() {
+            handle_key(&mut app, key(KeyCode::Char(c)));
+        }
+        let quit = handle_key(&mut app, key(KeyCode::Enter));
+        assert!(quit);
+    }
+
+    #[test]
+    fn edit_ascii_non_printable_rejected() {
+        let mut app = make_app(b"\x00");
+        app.mode = Mode::EditAscii;
+        // Ctrl+C key event (Char 'c' + CONTROL modifier) must NOT write
+        let ctrl_c = KeyEvent {
+            code: KeyCode::Char('c'),
+            modifiers: KeyModifiers::CONTROL,
+            kind: crossterm::event::KeyEventKind::Press,
+            state: crossterm::event::KeyEventState::NONE,
+        };
+        handle_key(&mut app, ctrl_c);
+        assert_eq!(app.buffer.get(0), Some(0x00)); // unchanged
+        assert_eq!(app.cursor, 0); // cursor did not advance
+    }
 }
