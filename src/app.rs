@@ -33,6 +33,8 @@ pub struct App {
     pub cursor: usize,
     pub scroll_offset: usize,
     pub bytes_per_row: usize,
+    /// User-requested bytes per row (may be larger than what fits on screen).
+    pub requested_bytes_per_row: usize,
     pub visible_rows: usize,
     pub command_input: String,
     pub search_input: String,
@@ -64,6 +66,7 @@ impl App {
             cursor: 0,
             scroll_offset: 0,
             bytes_per_row: 16,
+            requested_bytes_per_row: 16,
             visible_rows: 24,
             command_input: String::new(),
             search_input: String::new(),
@@ -294,6 +297,7 @@ impl App {
                 let n_str = cmd.split_whitespace().nth(1).unwrap_or("");
                 match n_str.parse::<usize>() {
                     Ok(n) if n >= 1 => {
+                        self.requested_bytes_per_row = n;
                         self.bytes_per_row = n;
                         self.cursor = self.cursor.min(if self.buffer.is_empty() { 0 } else { self.buffer.len() - 1 });
                         self.ensure_cursor_visible();
