@@ -6,7 +6,7 @@ files:
   - src/entropy.rs
 db_tables: []
 depends_on:
-  - buffer
+  - specs/buffer/buffer.spec.md
 ---
 
 ## Purpose
