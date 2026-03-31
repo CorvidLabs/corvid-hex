@@ -27,6 +27,7 @@ pub enum FieldType {
 }
 
 impl FieldType {
+    #[allow(dead_code)]
     pub fn byte_count(self) -> usize {
         match self {
             FieldType::U8
