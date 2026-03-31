@@ -17,12 +17,12 @@ Provides a template system for parsing and labeling known binary file formats. T
 | Symbol | Signature | Description |
 |--------|-----------|-------------|
 | `FieldType` | `pub enum FieldType` | How a template field's bytes are interpreted. Variants: `U8`, `U16Le`, `U16Be`, `U32Le`, `U32Be`, `U64Le`, `U64Be`, `AsciiStr`, `Bytes`. |
-| `FieldType::from_str` | `pub fn from_str(s: &str) -> Self` | Parses a field type string (e.g. `"u16le"`, `"ascii"`) into a `FieldType`. Case-insensitive. Unknown strings default to `Bytes`. |
+| `from_str` | `pub fn from_str(s: &str) -> Self` | Parses a field type string (e.g. `"u16le"`, `"ascii"`) into a `FieldType`. Case-insensitive. Unknown strings default to `Bytes`. |
 | `TemplateField` | `pub struct TemplateField` | A single named field: `name`, `offset`, `size`, `field_type`. |
 | `parse_field_value` | `pub fn parse_field_value(field: &TemplateField, bytes: &[u8]) -> String` | Formats a field's bytes as a human-readable string based on its `FieldType`. Returns `"(out of range)"` if bytes are too short. |
 | `FormatTemplate` | `pub struct FormatTemplate` | A complete format template: `name`, `magic`, `magic_offset`, `second_magic`, `fields`. |
-| `FormatTemplate::matches` | `pub fn matches(&self, data: &[u8]) -> bool` | Checks if data matches this template's magic bytes (and optional secondary magic). |
-| `FormatTemplate::resolve_fields` | `pub fn resolve_fields(&self, data: &[u8]) -> Vec<TemplateField>` | Returns static fields plus dynamically resolved chunk fields (PNG chunks, ZIP entries). |
+| `matches` | `pub fn matches(&self, data: &[u8]) -> bool` | Checks if data matches this template's magic bytes (and optional secondary magic). |
+| `resolve_fields` | `pub fn resolve_fields(&self, data: &[u8]) -> Vec<TemplateField>` | Returns static fields plus dynamically resolved chunk fields (PNG chunks, ZIP entries). |
 | `build_field_map` | `pub fn build_field_map(fields: &[TemplateField]) -> HashMap<usize, (String, usize)>` | Builds a byte-offset to (field_name, field_index) lookup map covering every byte within each field's range. |
 | `builtin_templates` | `pub fn builtin_templates() -> Vec<FormatTemplate>` | Returns all built-in format templates (PNG, ZIP, ELF, PE, Mach-O, SQLite, JPEG, GIF, BMP, WAV, PDF). |
 | `detect_format` | `pub fn detect_format(data: &[u8], extra: &[FormatTemplate]) -> Option<FormatTemplate>` | Auto-detects a file's format by trying each template's magic bytes. Checks user-provided templates first, then built-ins. |

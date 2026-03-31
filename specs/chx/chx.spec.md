@@ -45,6 +45,8 @@ Core application module for the `chx` hex editor. Defines the application state 
 | `StringKind` | `pub enum StringKind { Ascii, Utf8, Utf16Le, Utf16Be }` | Classification of an extracted string's encoding. |
 | `extract_strings` | `pub fn extract_strings(data: &[u8], min_length: usize) -> Vec<StringEntry>` | Scans binary data for ASCII, UTF-8, UTF-16 LE, and UTF-16 BE strings of at least `min_length` characters. Returns results sorted by offset. |
 | `export_strings` | `pub fn export_strings(entries: &[StringEntry], path: &Path) -> io::Result<()>` | Writes string entries to a text file in tab-separated format (`offset\tkind\ttext`). |
+| `redetect_template` | `pub fn redetect_template(&mut self)` | Re-runs format detection against the current buffer contents. Updates `active_template`, `template_fields`, and `template_field_map`. Called by the `:fmt detect` command. |
+| `template_field_info_at_cursor` | `pub fn template_field_info_at_cursor(&self) -> Option<String>` | Returns a description of the format template field at the cursor position for the status bar, or `None` if no field covers the cursor or the template overlay is hidden. |
 
 ## Invariants
 
