@@ -15,6 +15,10 @@ pub enum Mode {
     Command,
     Search,
     Strings,
+    /// Inspector panel is focused; j/k navigate fields, Enter edits.
+    Inspector,
+    /// Typing a new value for an inspector field.
+    InspectorEdit,
 }
 
 impl Mode {
@@ -27,6 +31,8 @@ impl Mode {
             Mode::Command => "COMMAND",
             Mode::Search => "SEARCH",
             Mode::Strings => "STRINGS",
+            Mode::Inspector => "INSPECTOR",
+            Mode::InspectorEdit => "INSP-EDIT",
         }
     }
 }
@@ -112,6 +118,12 @@ pub struct App {
     pub entropy_cache: Vec<f64>,
     /// Cached entropy panel area (set during render, used for mouse hit-testing).
     pub entropy_panel_area: Rect,
+    /// Whether the data inspector panel is visible.
+    pub inspector_visible: bool,
+    /// Currently selected field index in the inspector panel.
+    pub inspector_field: usize,
+    /// Text input buffer when editing an inspector field value.
+    pub inspector_input: String,
 }
 
 impl App {
@@ -165,6 +177,9 @@ impl App {
             entropy_window_size: 256,
             entropy_cache: Vec::new(),
             entropy_panel_area: Rect::default(),
+            inspector_visible: false,
+            inspector_field: 0,
+            inspector_input: String::new(),
         })
     }
 
@@ -437,6 +452,17 @@ impl App {
                 self.status_message =
                     Some(format!("Found {count} strings (min length: {min_len})"));
             }
+            "inspector" | "inspector on" => {
+                self.inspector_visible = true;
+                self.status_message = Some("Inspector shown (I to toggle, Tab to focus)".to_string());
+            }
+            "inspector off" => {
+                self.inspector_visible = false;
+                if matches!(self.mode, Mode::Inspector | Mode::InspectorEdit) {
+                    self.mode = Mode::Normal;
+                }
+                self.status_message = Some("Inspector hidden".to_string());
+            }
             _ if cmd.starts_with("columns ") || cmd.starts_with("cols ") => {
                 let n_str = cmd.split_whitespace().nth(1).unwrap_or("");
                 match n_str.parse::<usize>() {
@@ -673,6 +699,26 @@ mod tests {
         assert_eq!(Mode::EditAscii.label(), "EDIT-ASCII");
         assert_eq!(Mode::Command.label(), "COMMAND");
         assert_eq!(Mode::Search.label(), "SEARCH");
+        assert_eq!(Mode::Inspector.label(), "INSPECTOR");
+        assert_eq!(Mode::InspectorEdit.label(), "INSP-EDIT");
+    }
+
+    #[test]
+    fn execute_command_inspector_on_off() {
+        let mut app = make_app(b"test");
+        assert!(!app.inspector_visible);
+
+        app.command_input = "inspector".to_string();
+        app.execute_command();
+        assert!(app.inspector_visible);
+
+        app.command_input = "inspector off".to_string();
+        app.execute_command();
+        assert!(!app.inspector_visible);
+
+        app.command_input = "inspector on".to_string();
+        app.execute_command();
+        assert!(app.inspector_visible);
     }
 
     #[test]

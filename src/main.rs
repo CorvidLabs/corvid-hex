@@ -9,6 +9,7 @@ mod buffer;
 mod entropy;
 mod format;
 mod input;
+mod inspector;
 mod render;
 mod search;
 mod strings;

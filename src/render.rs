@@ -1,7 +1,11 @@
 use crate::app::{App, Mode};
 use crate::entropy;
+use crate::inspector;
 use ratatui::prelude::*;
 use ratatui::widgets::{Block, Borders, Paragraph, Scrollbar, ScrollbarOrientation, ScrollbarState};
+
+/// Total width of the inspector panel (including borders).
+const INSPECTOR_PANEL_WIDTH: u16 = 30;
 
 const COLOR_NULL: Color = Color::DarkGray;
 const COLOR_PRINTABLE: Color = Color::Cyan;
@@ -60,7 +64,7 @@ pub fn draw(f: &mut Frame, app: &mut App) {
         .direction(Direction::Vertical)
         .constraints([
             Constraint::Length(1), // Header
-            Constraint::Min(1),    // Hex view (+ optional strings/entropy panels)
+            Constraint::Min(1),    // Hex view (+ optional strings/entropy panels + inspector)
             Constraint::Length(1), // Status bar
         ])
         .split(area);
@@ -68,7 +72,7 @@ pub fn draw(f: &mut Frame, app: &mut App) {
     draw_header(f, app, v_chunks[0]);
 
     // Determine the main content area, potentially split for the entropy panel.
-    let hex_area = if app.show_entropy && area.width > ENTROPY_PANEL_WIDTH + 20 {
+    let main_area = if app.show_entropy && area.width > ENTROPY_PANEL_WIDTH + 20 {
         let h_chunks = Layout::default()
             .direction(Direction::Horizontal)
             .constraints([
@@ -82,6 +86,21 @@ pub fn draw(f: &mut Frame, app: &mut App) {
         // Reset entropy panel area when hidden so mouse clicks don't land there.
         app.entropy_panel_area = Rect::default();
         v_chunks[1]
+    };
+
+    // Optionally split off the inspector panel on the right.
+    let hex_area = if app.inspector_visible && main_area.width > INSPECTOR_PANEL_WIDTH + 20 {
+        let horiz = Layout::default()
+            .direction(Direction::Horizontal)
+            .constraints([
+                Constraint::Min(1),
+                Constraint::Length(INSPECTOR_PANEL_WIDTH),
+            ])
+            .split(main_area);
+        draw_inspector(f, app, horiz[1]);
+        horiz[0]
+    } else {
+        main_area
     };
 
     // When the strings panel is visible, split the hex area horizontally.
@@ -369,6 +388,121 @@ fn draw_strings_panel(f: &mut Frame, app: &mut App, area: Rect) {
     }
 }
 
+fn draw_inspector(f: &mut Frame, app: &App, area: Rect) {
+    let is_focused = matches!(app.mode, Mode::Inspector | Mode::InspectorEdit);
+    let border_style = if is_focused {
+        Style::default().fg(Color::Cyan)
+    } else {
+        Style::default().fg(Color::DarkGray)
+    };
+
+    let block = Block::default()
+        .title(" Inspector ")
+        .borders(Borders::ALL)
+        .border_style(border_style);
+    let inner = block.inner(area);
+    f.render_widget(block, area);
+
+    if inner.height == 0 || inner.width == 0 {
+        return;
+    }
+
+    // Offset line
+    let offset_text = format!("@ 0x{:08X}", app.cursor);
+    f.render_widget(
+        Paragraph::new(offset_text).style(Style::default().fg(Color::DarkGray)),
+        Rect::new(inner.x, inner.y, inner.width, 1),
+    );
+
+    if inner.height <= 1 {
+        return;
+    }
+
+    // Separator under offset
+    let sep_line = "─".repeat(inner.width as usize);
+    f.render_widget(
+        Paragraph::new(sep_line.clone()).style(Style::default().fg(Color::DarkGray)),
+        Rect::new(inner.x, inner.y + 1, inner.width, 1),
+    );
+
+    // Collect bytes at cursor
+    let bytes: Vec<u8> = (0..8)
+        .filter_map(|i| app.buffer.get(app.cursor + i))
+        .collect();
+    let fields = inspector::interpret(&bytes);
+
+    // Clamp selected field index to valid range
+    let selected = if fields.is_empty() {
+        0
+    } else {
+        app.inspector_field.min(fields.len() - 1)
+    };
+
+    // Label column width (longest label is "u64 BE" = 6 chars; pad to 7)
+    let label_w: usize = 7;
+    let value_w = (inner.width as usize).saturating_sub(label_w + 1);
+
+    for (i, field) in fields.iter().enumerate() {
+        let y = inner.y + 2 + i as u16;
+        if y >= inner.y + inner.height {
+            break;
+        }
+
+        let is_selected = is_focused && i == selected;
+
+        // Determine value string to display
+        let value_display = if is_selected && matches!(app.mode, Mode::InspectorEdit) {
+            // Show cursor indicator in edit mode
+            let input = &app.inspector_input;
+            if input.len() < value_w {
+                format!("{}▌", input)
+            } else {
+                // Show tail of input to keep cursor visible
+                format!("{}▌", &input[input.len().saturating_sub(value_w - 1)..])
+            }
+        } else {
+            let v = &field.value;
+            if v.len() > value_w {
+                format!("{}…", &v[..value_w.saturating_sub(1)])
+            } else {
+                v.clone()
+            }
+        };
+
+        let label_str = format!("{:<label_w$}", field.label);
+        // Right-align value within available space
+        let line = format!("{} {:>value_w$}", label_str, value_display);
+
+        let style = if is_selected {
+            Style::default().fg(Color::Black).bg(Color::Cyan).add_modifier(Modifier::BOLD)
+        } else if !field.field_type.is_editable() {
+            Style::default().fg(Color::DarkGray)
+        } else {
+            Style::default().fg(Color::White)
+        };
+
+        f.render_widget(
+            Paragraph::new(line).style(style),
+            Rect::new(inner.x, y, inner.width, 1),
+        );
+    }
+
+    // Help hint at bottom if focused
+    if is_focused && inner.height > 4 {
+        let hint_y = inner.y + inner.height - 1;
+        let hint = if matches!(app.mode, Mode::InspectorEdit) {
+            "Enter=commit  Esc=cancel"
+        } else {
+            "j/k=nav  Enter=edit  Esc=exit"
+        };
+        let hint_str = format!("{:^width$}", hint, width = inner.width as usize);
+        f.render_widget(
+            Paragraph::new(hint_str).style(Style::default().fg(Color::DarkGray)),
+            Rect::new(inner.x, hint_y, inner.width, 1),
+        );
+    }
+}
+
 fn draw_entropy_panel(f: &mut Frame, app: &mut App, area: Rect) {
     // Populate the entropy cache if needed.
     if app.entropy_cache.is_empty() && !app.buffer.is_empty() {
@@ -436,7 +570,7 @@ fn draw_status_bar(f: &mut Frame, app: &App, area: Rect) {
         Mode::Visual => Style::default().fg(Color::Black).bg(Color::Yellow),
         Mode::EditHex | Mode::EditAscii => Style::default().fg(Color::Black).bg(Color::Green),
         Mode::Command | Mode::Search => Style::default().fg(Color::Black).bg(Color::Magenta),
-        Mode::Strings => Style::default().fg(Color::Black).bg(Color::Cyan),
+        Mode::Strings | Mode::Inspector | Mode::InspectorEdit => Style::default().fg(Color::Black).bg(Color::Cyan),
     };
 
     let mode_label = format!(" {} ", app.mode.label());

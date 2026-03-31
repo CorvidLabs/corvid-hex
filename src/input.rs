@@ -12,6 +12,8 @@ pub fn handle_key(app: &mut App, key: KeyEvent) -> bool {
         Mode::Command => handle_command(app, key),
         Mode::Search => handle_search(app, key),
         Mode::Strings => handle_strings(app, key),
+        Mode::Inspector => handle_inspector(app, key),
+        Mode::InspectorEdit => handle_inspector_edit(app, key),
     }
 }
 
@@ -210,6 +212,113 @@ fn handle_normal(app: &mut App, key: KeyEvent) -> bool {
             app.pending_bookmark = Some('\'');
         }
 
+        // Inspector toggle
+        KeyCode::Char('I') => {
+            app.inspector_visible = !app.inspector_visible;
+            let state = if app.inspector_visible { "shown — Tab to focus" } else { "hidden" };
+            app.status_message = Some(format!("Inspector {state}"));
+        }
+
+        // Tab focuses the inspector panel if visible
+        KeyCode::Tab => {
+            if app.inspector_visible {
+                app.mode = Mode::Inspector;
+                app.status_message = None;
+            }
+        }
+
+        _ => {}
+    }
+    false
+}
+
+fn handle_inspector(app: &mut App, key: KeyEvent) -> bool {
+    match key.code {
+        KeyCode::Esc => {
+            app.mode = Mode::Normal;
+        }
+        // Toggle inspector off
+        KeyCode::Char('I') => {
+            app.inspector_visible = false;
+            app.mode = Mode::Normal;
+            app.status_message = Some("Inspector hidden".to_string());
+        }
+        // Navigate fields
+        KeyCode::Char('j') | KeyCode::Down => {
+            let bytes: Vec<u8> = (0..8)
+                .filter_map(|i| app.buffer.get(app.cursor + i))
+                .collect();
+            let count = crate::inspector::interpret(&bytes).len();
+            if count > 0 {
+                app.inspector_field = (app.inspector_field + 1).min(count - 1);
+            }
+        }
+        KeyCode::Char('k') | KeyCode::Up => {
+            app.inspector_field = app.inspector_field.saturating_sub(1);
+        }
+        // Start editing current field
+        KeyCode::Enter | KeyCode::Char('e') => {
+            let bytes: Vec<u8> = (0..8)
+                .filter_map(|i| app.buffer.get(app.cursor + i))
+                .collect();
+            let fields = crate::inspector::interpret(&bytes);
+            let sel = app.inspector_field.min(fields.len().saturating_sub(1));
+            if let Some(field) = fields.get(sel) {
+                if field.field_type.is_editable() {
+                    app.inspector_input = field.value.clone();
+                    app.mode = Mode::InspectorEdit;
+                } else {
+                    app.status_message = Some("This field is read-only".to_string());
+                }
+            }
+        }
+        _ => {}
+    }
+    false
+}
+
+fn handle_inspector_edit(app: &mut App, key: KeyEvent) -> bool {
+    match key.code {
+        KeyCode::Esc => {
+            app.inspector_input.clear();
+            app.mode = Mode::Inspector;
+        }
+        KeyCode::Enter => {
+            let bytes: Vec<u8> = (0..8)
+                .filter_map(|i| app.buffer.get(app.cursor + i))
+                .collect();
+            let fields = crate::inspector::interpret(&bytes);
+            let sel = app.inspector_field.min(fields.len().saturating_sub(1));
+            if let Some(field) = fields.get(sel) {
+                match field.field_type.parse(&app.inspector_input) {
+                    Some(new_bytes) => {
+                        for (i, &b) in new_bytes.iter().enumerate() {
+                            app.buffer.set(app.cursor + i, b);
+                        }
+                        app.status_message = Some(format!(
+                            "Wrote {} byte{} at 0x{:X}",
+                            new_bytes.len(),
+                            if new_bytes.len() == 1 { "" } else { "s" },
+                            app.cursor
+                        ));
+                    }
+                    None => {
+                        app.status_message = Some(format!(
+                            "Invalid value for {}",
+                            field.label
+                        ));
+                    }
+                }
+            }
+            app.inspector_input.clear();
+            app.mode = Mode::Normal;
+        }
+        KeyCode::Backspace => {
+            app.inspector_input.pop();
+        }
+        KeyCode::Char(c) => {
+            app.inspector_input.push(c);
+        }
         _ => {}
     }
     false
