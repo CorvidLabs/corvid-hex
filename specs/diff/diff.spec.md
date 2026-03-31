@@ -18,21 +18,21 @@ Provides byte-by-byte binary diff comparison between two files. Loads both files
 |--------|-----------|-------------|
 | `DiffState` | `pub struct DiffState` | Core state for a binary diff session. Public fields: `left_data: Vec<u8>`, `right_data: Vec<u8>`, `left_name: String`, `right_name: String`, `diff_offsets: Vec<usize>`, `diff_index: usize`, `cursor: usize`, `scroll_offset: usize`, `bytes_per_row: usize`, `visible_rows: usize`, `status_message: Option<String>`, `xor_view: bool`. |
 | `DiffStats` | `pub struct DiffStats` | Summary statistics for a diff. Fields: `total_bytes: usize`, `diff_count: usize`, `match_percentage: f64`, `first_diff: Option<usize>`, `left_size: usize`, `right_size: usize`. |
-| `DiffState::open` | `pub fn open(left_path: &str, right_path: &str) -> anyhow::Result<Self>` | Opens two files, reads them into memory, computes diff offsets, and returns an initialized `DiffState` with default cursor/scroll/view settings. |
-| `DiffState::max_len` | `pub fn max_len(&self) -> usize` | Returns the maximum length across both files. |
-| `DiffState::stats` | `pub fn stats(&self) -> DiffStats` | Computes and returns summary statistics including match percentage, diff count, and first diff offset. |
-| `DiffState::cursor_row` | `pub fn cursor_row(&self) -> usize` | Returns the row index for the current cursor position (`cursor / bytes_per_row`). |
-| `DiffState::ensure_cursor_visible` | `pub fn ensure_cursor_visible(&mut self)` | Adjusts `scroll_offset` so the cursor's row is within the visible window. |
-| `DiffState::move_cursor` | `pub fn move_cursor(&mut self, offset: isize)` | Moves cursor by a signed offset, clamped to `[0, max_len - 1]`. Calls `ensure_cursor_visible`. |
-| `DiffState::move_cursor_to` | `pub fn move_cursor_to(&mut self, pos: usize)` | Sets cursor to an absolute position, clamped to `[0, max_len - 1]`. Calls `ensure_cursor_visible`. |
-| `DiffState::page_down` | `pub fn page_down(&mut self)` | Moves cursor forward by `visible_rows * bytes_per_row` bytes. |
-| `DiffState::page_up` | `pub fn page_up(&mut self)` | Moves cursor backward by `visible_rows * bytes_per_row` bytes. |
-| `DiffState::next_diff` | `pub fn next_diff(&mut self)` | Jumps cursor to the next difference after the current position. Wraps to the first difference if at the end. Sets `status_message` with diff index info. |
-| `DiffState::prev_diff` | `pub fn prev_diff(&mut self)` | Jumps cursor to the previous difference before the current position. Wraps to the last difference if at the beginning. Sets `status_message` with diff index info. |
-| `DiffState::toggle_xor_view` | `pub fn toggle_xor_view(&mut self)` | Toggles `xor_view` and sets a status message indicating the new state. |
-| `DiffState::left_byte` | `pub fn left_byte(&self, offset: usize) -> Option<u8>` | Returns the byte at the given offset in the left file, or `None` if beyond its length. |
-| `DiffState::right_byte` | `pub fn right_byte(&self, offset: usize) -> Option<u8>` | Returns the byte at the given offset in the right file, or `None` if beyond its length. |
-| `DiffState::is_diff` | `pub fn is_diff(&self, offset: usize) -> bool` | Returns true if the given offset is in the diff offsets list (binary search). |
+| `open` | `pub fn open(left_path: &str, right_path: &str) -> anyhow::Result<Self>` | Opens two files, reads them into memory, computes diff offsets, and returns an initialized `DiffState` with default cursor/scroll/view settings. |
+| `max_len` | `pub fn max_len(&self) -> usize` | Returns the maximum length across both files. |
+| `stats` | `pub fn stats(&self) -> DiffStats` | Computes and returns summary statistics including match percentage, diff count, and first diff offset. |
+| `cursor_row` | `pub fn cursor_row(&self) -> usize` | Returns the row index for the current cursor position (`cursor / bytes_per_row`). |
+| `ensure_cursor_visible` | `pub fn ensure_cursor_visible(&mut self)` | Adjusts `scroll_offset` so the cursor's row is within the visible window. |
+| `move_cursor` | `pub fn move_cursor(&mut self, offset: isize)` | Moves cursor by a signed offset, clamped to `[0, max_len - 1]`. Calls `ensure_cursor_visible`. |
+| `move_cursor_to` | `pub fn move_cursor_to(&mut self, pos: usize)` | Sets cursor to an absolute position, clamped to `[0, max_len - 1]`. Calls `ensure_cursor_visible`. |
+| `page_down` | `pub fn page_down(&mut self)` | Moves cursor forward by `visible_rows * bytes_per_row` bytes. |
+| `page_up` | `pub fn page_up(&mut self)` | Moves cursor backward by `visible_rows * bytes_per_row` bytes. |
+| `next_diff` | `pub fn next_diff(&mut self)` | Jumps cursor to the next difference after the current position. Wraps to the first difference if at the end. Sets `status_message` with diff index info. |
+| `prev_diff` | `pub fn prev_diff(&mut self)` | Jumps cursor to the previous difference before the current position. Wraps to the last difference if at the beginning. Sets `status_message` with diff index info. |
+| `toggle_xor_view` | `pub fn toggle_xor_view(&mut self)` | Toggles `xor_view` and sets a status message indicating the new state. |
+| `left_byte` | `pub fn left_byte(&self, offset: usize) -> Option<u8>` | Returns the byte at the given offset in the left file, or `None` if beyond its length. |
+| `right_byte` | `pub fn right_byte(&self, offset: usize) -> Option<u8>` | Returns the byte at the given offset in the right file, or `None` if beyond its length. |
+| `is_diff` | `pub fn is_diff(&self, offset: usize) -> bool` | Returns true if the given offset is in the diff offsets list (binary search). |
 
 ## Invariants
 

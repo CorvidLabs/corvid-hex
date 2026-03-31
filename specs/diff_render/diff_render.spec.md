@@ -6,7 +6,7 @@ files:
   - src/diff_render.rs
 db_tables: []
 depends_on:
-  - diff
+  - specs/diff/diff.spec.md
 ---
 
 ## Purpose
