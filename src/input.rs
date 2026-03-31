@@ -19,6 +19,27 @@ pub fn handle_key(app: &mut App, key: KeyEvent) -> bool {
 pub fn handle_mouse(app: &mut App, mouse: MouseEvent) {
     match mouse.kind {
         MouseEventKind::Down(MouseButton::Left) => {
+            // Check if the click lands on the entropy panel.
+            if app.show_entropy {
+                let ep = app.entropy_panel_area;
+                if ep.width > 0
+                    && mouse.column >= ep.x
+                    && mouse.column < ep.x + ep.width
+                    && mouse.row >= ep.y
+                    && mouse.row < ep.y + ep.height
+                {
+                    let panel_height = ep.height as usize;
+                    let file_len = app.buffer.len();
+                    if panel_height > 0 && file_len > 0 {
+                        let row = (mouse.row - ep.y) as usize;
+                        let seg_start = (row * file_len) / panel_height;
+                        app.move_cursor_to(seg_start);
+                        app.mode = Mode::Normal;
+                    }
+                    return;
+                }
+            }
+
             if let Some(offset) = app.offset_from_screen(mouse.column, mouse.row) {
                 // Exit any text-input modes on click
                 match app.mode {

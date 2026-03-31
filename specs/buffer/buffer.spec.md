@@ -30,6 +30,7 @@ Provides a copy-on-open file buffer with a sparse edit overlay. For files under 
 | `is_modified` | `pub fn is_modified(&self, offset: usize) -> bool` | Returns true if the byte at offset has been edited. |
 | `is_dirty` | `pub fn is_dirty(&self) -> bool` | Returns true if any edits exist in the overlay. |
 | `save` | `pub fn save(&mut self) -> Result<()>` | Merges edits into original data, writes to disk, clears the edit overlay. |
+| `count_bytes_in_range` | `pub fn count_bytes_in_range(&self, start: usize, end: usize) -> [u32; 256]` | Counts byte value frequencies in `[start, end)`, applying the edit overlay. Uses the original data as a base and patches in sparse edits. Returns a 256-element array indexed by byte value. |
 | `find` | `pub fn find(&self, pattern: &[u8], start: usize) -> Option<usize>` | Searches for a byte pattern starting at `start`, respecting the edit overlay. Returns first match offset. |
 
 ## Invariants
