@@ -4,20 +4,23 @@ version: 1
 status: draft
 files:
   - src/buffer.rs
+  - src/lib.rs
 db_tables: []
 depends_on: []
 ---
 
 ## Purpose
 
-Provides a copy-on-open file buffer with a sparse edit overlay. Reads the entire file into memory on open, stores modifications in a `HashMap<usize, u8>` overlay, and merges edits on save. This allows efficient overwrite-mode editing without rewriting the full buffer on every keystroke.
+Provides a copy-on-open file buffer with a sparse edit overlay. For files under 100 MB, reads the entire contents into memory; for larger files, uses memory-mapped I/O (`memmap2`) for on-demand paging by the OS. Stores modifications in a `HashMap<usize, u8>` overlay in both cases, and merges edits on save. This allows efficient overwrite-mode editing without rewriting the full buffer on every keystroke. The `lib.rs` crate root re-exports `Buffer` for use by other modules.
 
 ## Public API
 
 | Symbol | Signature | Description |
 |--------|-----------|-------------|
-| `Buffer` | `pub struct Buffer` | Copy-on-open file buffer. Public field: `path: PathBuf`. Internal: `original: Vec<u8>`, `edits: HashMap<usize, u8>`, `undo_stack: Vec<UndoEntry>`, `redo_stack: Vec<UndoEntry>`. |
-| `open` | `pub fn open(path: &str) -> Result<Self>` | Opens a file (or creates an empty buffer if path doesn't exist). Reads entire contents into memory. |
+| `buffer` | `pub mod buffer` | Re-exported buffer module from the crate root (`lib.rs`). |
+| `Buffer` | `pub struct Buffer` | Copy-on-open file buffer. Public field: `path: PathBuf`. Internal: `backing: Backing`, `edits: HashMap<usize, u8>`, `undo_stack: Vec<UndoEntry>`, `redo_stack: Vec<UndoEntry>`. |
+| `open` | `pub fn open(path: &str) -> Result<Self>` | Opens a file (or creates an empty buffer if path doesn't exist). Files >= 100 MB are memory-mapped; smaller files are read into memory. |
+| `is_mapped` | `pub fn is_mapped(&self) -> bool` | Returns true if the buffer is backed by a memory-mapped file. Only available in test builds (`#[cfg(test)]`). |
 | `len` | `pub fn len(&self) -> usize` | Returns the length of the original data (not affected by edits). |
 | `is_empty` | `pub fn is_empty(&self) -> bool` | Returns true if the original data is empty. |
 | `get` | `pub fn get(&self, offset: usize) -> Option<u8>` | Returns the byte at offset, preferring the edit overlay. Returns `None` if offset >= len. |
@@ -89,8 +92,9 @@ Provides a copy-on-open file buffer with a sparse edit overlay. Reads the entire
 | Dependency | Usage |
 |------------|-------|
 | `anyhow` | `Result`, `Context` for error propagation |
+| `memmap2` | Memory-mapped file I/O for large files |
 | `std::collections::HashMap` | Sparse edit overlay storage |
-| `std::fs` | `read` and `write` for file I/O |
+| `std::fs` | `read`, `write`, `metadata`, `File` for file I/O |
 | `std::path::{Path, PathBuf}` | File path handling |
 
 ## Change Log

@@ -1,4 +1,4 @@
-use crate::buffer::Buffer;
+use chx::Buffer;
 use crate::search;
 use crate::strings::{self, StringEntry};
 use anyhow::Result;
