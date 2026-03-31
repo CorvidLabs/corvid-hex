@@ -17,6 +17,7 @@ Provides a copy-on-open file buffer with a sparse edit overlay. For files under 
 
 | Symbol | Signature | Description |
 |--------|-----------|-------------|
+| `buffer` | `pub mod buffer` | Re-exported buffer module from the crate root (`lib.rs`). |
 | `Buffer` | `pub struct Buffer` | Copy-on-open file buffer. Public field: `path: PathBuf`. Internal: `backing: Backing`, `edits: HashMap<usize, u8>`, `undo_stack: Vec<UndoEntry>`, `redo_stack: Vec<UndoEntry>`. |
 | `open` | `pub fn open(path: &str) -> Result<Self>` | Opens a file (or creates an empty buffer if path doesn't exist). Files >= 100 MB are memory-mapped; smaller files are read into memory. |
 | `is_mapped` | `pub fn is_mapped(&self) -> bool` | Returns true if the buffer is backed by a memory-mapped file. Only available in test builds (`#[cfg(test)]`). |
