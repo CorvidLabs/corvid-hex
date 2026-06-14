@@ -1,15 +1,35 @@
 name: Spec Validation
-on: [push, pull_request]
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "specs/**"
+      - "src/**"
+      - "specsync.json"
+      - ".github/workflows/spec-check.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "specs/**"
+      - "src/**"
+      - "specsync.json"
+      - ".github/workflows/spec-check.yml"
 
 permissions:
   contents: read
   pull-requests: write
 
+concurrency:
+  group: spec-check-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   specsync:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: CorvidLabs/spec-sync@v3.2.0
         with:
           strict: 'true'
