@@ -1,0 +1,19 @@
+# Atlas coverage scope for corvid-hex.
+#
+# The specs govern the Rust library and CLI source under src/, not the test
+# suites (the Rust integration test plus the bun/TypeScript conformance
+# tests) or build output. Keep those out of the coverage denominator so the
+# percentage reflects the source the specs are meant to cover. Root-anchored
+# subset of gitignore.
+
+# Rust integration tests and their fixtures.
+tests/
+
+# Bun/TypeScript conformance tests colocated at the repo root.
+corvid-hex.test.ts
+placeholder.test.ts
+validate.test.ts
+
+# Build output and vendored deps.
+target/
+node_modules/

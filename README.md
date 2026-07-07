@@ -5,6 +5,7 @@ A fast, modern TUI hex editor with Vi-style keybindings. Built in Rust with [rat
 ![Rust](https://img.shields.io/badge/rust-stable-orange)
 ![License](https://img.shields.io/badge/license-MIT-blue)
 ![CI](https://github.com/CorvidLabs/corvid-hex/actions/workflows/ci.yml/badge.svg)
+![spec coverage](https://img.shields.io/endpoint?url=https://corvidlabs.github.io/corvid-hex/badges/coverage.json)
 
 ## Features
 

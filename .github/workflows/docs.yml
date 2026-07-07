@@ -19,12 +19,19 @@ concurrency:
   group: pages
   cancel-in-progress: false
 
+# Run the bundled Node-20 JavaScript actions on Node 24 to silence GitHub's
+# Node-20 end-of-life deprecation warnings.
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
 jobs:
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0   # atlas reads git history for activity
       - uses: dtolnay/rust-toolchain@stable
       - name: Build docs
         run: cargo doc --no-deps --document-private-items
@@ -32,6 +39,31 @@ jobs:
           RUSTDOCFLAGS: "--default-theme ayu"
       - name: Add redirect
         run: echo '<meta http-equiv="refresh" content="0;url=chx/index.html">' > target/doc/index.html
+
+      # Render the spec-coverage badge + SVG cards from the atlas into the docs
+      # output, so they ship to Pages alongside the rustdoc (served at
+      # corvidlabs.github.io/corvid-hex/badges/). Cached by the pinned v1 commit
+      # so the step is a fast no-op on a cache hit.
+      - name: Resolve pinned atlas commit (cache key)
+        id: atlasref
+        run: echo "sha=$(git ls-remote https://github.com/CorvidLabs/fledge-plugin-atlas v1 | cut -f1)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache the fledge-atlas CLI
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/fledge-atlas
+            ~/.cargo/.crates.toml
+            ~/.cargo/.crates2.json
+          key: fledge-atlas-${{ runner.os }}-${{ steps.atlasref.outputs.sha }}
+
+      - name: Render atlas coverage badges
+        uses: CorvidLabs/fledge-plugin-atlas@v1
+        with:
+          path: .
+          output-dir: target/doc/badges
+          components: "coverage langmix treemap sunburst"
+
       - uses: actions/upload-pages-artifact@v3
         with:
           path: target/doc
