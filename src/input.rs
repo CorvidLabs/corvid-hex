@@ -220,11 +220,9 @@ fn handle_normal(app: &mut App, key: KeyEvent) -> bool {
         }
 
         // Tab focuses the inspector panel if visible
-        KeyCode::Tab => {
-            if app.inspector_visible {
-                app.mode = Mode::Inspector;
-                app.status_message = None;
-            }
+        KeyCode::Tab if app.inspector_visible => {
+            app.mode = Mode::Inspector;
+            app.status_message = None;
         }
 
         _ => {}
@@ -964,7 +962,7 @@ mod tests {
     }
 
     #[test]
-    fn visual_mode_home_end_g_G() {
+    fn visual_mode_home_end_g_shift_g() {
         let mut app = make_app(&vec![0u8; 256]);
         app.cursor = 5;
         handle_key(&mut app, key(KeyCode::Char('v')));
