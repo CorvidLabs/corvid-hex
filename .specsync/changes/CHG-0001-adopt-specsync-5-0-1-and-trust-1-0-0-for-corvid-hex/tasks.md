@@ -5,4 +5,7 @@ artifact: tasks
 
 # Tasks
 
-- [x] Add governance.\n- [x] Install integrations.\n- [x] Add native verification.\n- [ ] Obtain owner approvals.
+- [x] Add governance.
+- [x] Install integrations.
+- [x] Add native verification.
+- [ ] Obtain owner approvals.
