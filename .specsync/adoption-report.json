@@ -1,0 +1,60 @@
+{
+  "bootstrap_policy": {
+    "base_commit": "06679cad2d50877fe7c455b9e4d9a7ac53478f9e",
+    "digest": "60f4daa45898deb8dd8e2e13c1b50cea62ece0d84fb8e188c29b74668c0f2bc6",
+    "path": ".specsync/sdd.json"
+  },
+  "generated_at": 1783887155,
+  "requirements_needing_ids": [
+    {
+      "action": "review and assign one stable ID per durable requirement",
+      "path": "specs/inspector/requirements.md",
+      "suggested_first_id": "REQ-inspector-001"
+    },
+    {
+      "action": "review and assign one stable ID per durable requirement",
+      "path": "specs/input/requirements.md",
+      "suggested_first_id": "REQ-input-001"
+    },
+    {
+      "action": "review and assign one stable ID per durable requirement",
+      "path": "specs/entropy/requirements.md",
+      "suggested_first_id": "REQ-entropy-001"
+    },
+    {
+      "action": "review and assign one stable ID per durable requirement",
+      "path": "specs/render/requirements.md",
+      "suggested_first_id": "REQ-render-001"
+    },
+    {
+      "action": "review and assign one stable ID per durable requirement",
+      "path": "specs/diff/requirements.md",
+      "suggested_first_id": "REQ-diff-001"
+    },
+    {
+      "action": "review and assign one stable ID per durable requirement",
+      "path": "specs/search/requirements.md",
+      "suggested_first_id": "REQ-search-001"
+    },
+    {
+      "action": "review and assign one stable ID per durable requirement",
+      "path": "specs/chx/requirements.md",
+      "suggested_first_id": "REQ-chx-001"
+    },
+    {
+      "action": "review and assign one stable ID per durable requirement",
+      "path": "specs/format/requirements.md",
+      "suggested_first_id": "REQ-format-001"
+    },
+    {
+      "action": "review and assign one stable ID per durable requirement",
+      "path": "specs/diff_render/requirements.md",
+      "suggested_first_id": "REQ-diff-render-001"
+    },
+    {
+      "action": "review and assign one stable ID per durable requirement",
+      "path": "specs/buffer/requirements.md",
+      "suggested_first_id": "REQ-buffer-001"
+    }
+  ]
+}

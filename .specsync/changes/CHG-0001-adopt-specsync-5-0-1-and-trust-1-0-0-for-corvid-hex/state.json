@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "id": "CHG-0001-adopt-specsync-5-0-1-and-trust-1-0-0-for-corvid-hex",
+  "slug": "adopt-specsync-5-0-1-and-trust-1-0-0-for-corvid-hex",
+  "title": "Adopt SpecSync 5.0.1 and Trust 1.0.0 for Corvid Hex",
+  "description": "Adopt SpecSync 5.0.1 and Trust 1.0.0 for Corvid Hex",
+  "kind": "migration",
+  "state": "draft",
+  "base_commit": "06679cad2d50877fe7c455b9e4d9a7ac53478f9e",
+  "created_at": 1783887244,
+  "updated_at": 1783887251,
+  "affected_specs": [],
+  "affected_paths": [
+    ".github/",
+    ".specsync/",
+    ".trust.toml",
+    ".augur.toml",
+    ".attest.json",
+    "fledge.toml",
+    "AGENTS.md"
+  ],
+  "no_spec_change": true,
+  "no_spec_change_rationale": "Governance and CI orchestration only; Rust and Bun behavior, public interfaces, release artifacts, documentation, and Atlas publication are unchanged.",
+  "acceptance_criteria": [
+    "SpecSync remains at 100 percent; Rust clippy",
+    "Rust tests",
+    "and Bun tests pass; agents and Trust doctor are healthy; release",
+    "docs",
+    "Atlas",
+    "CLI",
+    "and library boundaries remain unchanged."
+  ],
+  "selected_artifacts": [
+    "context",
+    "research",
+    "design",
+    "plan",
+    "tasks",
+    "testing",
+    "docs"
+  ],
+  "dependencies": [],
+  "answers": {
+    "architecture_risk": "yes",
+    "public_contract": "no"
+  }
+}

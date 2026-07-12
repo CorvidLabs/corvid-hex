@@ -1,0 +1,7 @@
+[tasks]
+clippy = "cargo clippy -- -D warnings"
+rust-test = "cargo test"
+bun-test = "bun test"
+[lanes.verify]
+description = "Run Corvid Hex Rust lint and Rust/Bun regression suites"
+steps = ["clippy", "rust-test", "bun-test"]
