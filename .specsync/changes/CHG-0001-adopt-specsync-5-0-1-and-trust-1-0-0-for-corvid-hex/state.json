@@ -22,13 +22,7 @@
   "no_spec_change": true,
   "no_spec_change_rationale": "Governance and CI orchestration only; Rust and Bun behavior, public interfaces, release artifacts, documentation, and Atlas publication are unchanged.",
   "acceptance_criteria": [
-    "SpecSync remains at 100 percent; Rust clippy",
-    "Rust tests",
-    "and Bun tests pass; agents and Trust doctor are healthy; release",
-    "docs",
-    "Atlas",
-    "CLI",
-    "and library boundaries remain unchanged."
+    "SpecSync remains at 100 percent; Rust clippy, Rust tests, and Bun tests pass; agents and Trust doctor are healthy; release, docs, Atlas, CLI, and library boundaries remain unchanged."
   ],
   "selected_artifacts": [
     "context",
