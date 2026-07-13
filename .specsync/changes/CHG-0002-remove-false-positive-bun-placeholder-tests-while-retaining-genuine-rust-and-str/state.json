@@ -5,10 +5,10 @@
   "title": "Remove false-positive Bun placeholder tests while retaining genuine Rust and structural verification",
   "description": "Remove false-positive Bun placeholder tests while retaining genuine Rust and structural verification",
   "kind": "refactor",
-  "state": "accepted",
+  "state": "implementing",
   "base_commit": "fe4be8367921c769a093e170d68cad9cc4857347",
   "created_at": 1783950231,
-  "updated_at": 1783950357,
+  "updated_at": 1783957191,
   "affected_specs": [],
   "affected_paths": [
     "tests/",

@@ -1,6 +1,6 @@
 ---
 id: CHG-0002-remove-false-positive-bun-placeholder-tests-while-retaining-genuine-rust-and-str
-state: accepted
+state: implementing
 type: refactor
 base_commit: fe4be8367921c769a093e170d68cad9cc4857347
 ---
