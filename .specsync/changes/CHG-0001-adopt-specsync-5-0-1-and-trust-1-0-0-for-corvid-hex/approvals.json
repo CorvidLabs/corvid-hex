@@ -1,3 +1,18 @@
 {
-  "approvals": []
+  "approvals": [
+    {
+      "gate": "definition",
+      "actor": "user:0xLeif",
+      "timestamp": 1783949594,
+      "digest": "ced3f9b2e12b6129e2a61b9f389ed18c5b1f9e9d513fee4e36f7f15163d5664f",
+      "note": "Definition approved for the authorized SpecSync 5 and Trust 1 rollout after truthful preparation tasks were completed."
+    },
+    {
+      "gate": "acceptance",
+      "actor": "user:0xLeif",
+      "timestamp": 1783950168,
+      "digest": "6e547ebe449d6e9654a02be8cc02b54de036c8dc8b5a4ef5c7d1f823ff2bc058",
+      "note": "Native verification passed after removing false placeholder tests: Clippy, 273 Rust tests, 4 mmap tests, and 40 genuine Bun tests."
+    }
+  ]
 }

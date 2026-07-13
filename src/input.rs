@@ -147,10 +147,8 @@ fn handle_normal(app: &mut App, key: KeyEvent) -> bool {
         KeyCode::Char('g') => {
             app.move_cursor_to(0);
         }
-        KeyCode::Char('G') => {
-            if !app.buffer.is_empty() {
-                app.move_cursor_to(app.buffer.len() - 1);
-            }
+        KeyCode::Char('G') if !app.buffer.is_empty() => {
+            app.move_cursor_to(app.buffer.len() - 1);
         }
 
         KeyCode::PageDown => app.page_down(),
@@ -346,10 +344,8 @@ fn handle_visual(app: &mut App, key: KeyEvent) -> bool {
             app.move_cursor_to(row_end);
         }
         KeyCode::Char('g') => app.move_cursor_to(0),
-        KeyCode::Char('G') => {
-            if !app.buffer.is_empty() {
-                app.move_cursor_to(app.buffer.len() - 1);
-            }
+        KeyCode::Char('G') if !app.buffer.is_empty() => {
+            app.move_cursor_to(app.buffer.len() - 1);
         }
 
         // Yank
@@ -494,32 +490,26 @@ fn handle_strings(app: &mut App, key: KeyEvent) -> bool {
         }
 
         // Navigate down
-        KeyCode::Char('j') | KeyCode::Down => {
-            if !app.strings_panel.results.is_empty() {
-                let max = app.strings_panel.results.len() - 1;
-                if app.strings_panel.selected < max {
-                    app.strings_panel.selected += 1;
-                    app.strings_panel.ensure_selected_visible();
-                }
+        KeyCode::Char('j') | KeyCode::Down if !app.strings_panel.results.is_empty() => {
+            let max = app.strings_panel.results.len() - 1;
+            if app.strings_panel.selected < max {
+                app.strings_panel.selected += 1;
+                app.strings_panel.ensure_selected_visible();
             }
         }
 
         // Navigate up
-        KeyCode::Char('k') | KeyCode::Up => {
-            if app.strings_panel.selected > 0 {
-                app.strings_panel.selected -= 1;
-                app.strings_panel.ensure_selected_visible();
-            }
+        KeyCode::Char('k') | KeyCode::Up if app.strings_panel.selected > 0 => {
+            app.strings_panel.selected -= 1;
+            app.strings_panel.ensure_selected_visible();
         }
 
         // Page down
-        KeyCode::PageDown => {
-            if !app.strings_panel.results.is_empty() {
-                let max = app.strings_panel.results.len() - 1;
-                let step = app.strings_panel.visible_rows.saturating_sub(1).max(1);
-                app.strings_panel.selected = (app.strings_panel.selected + step).min(max);
-                app.strings_panel.ensure_selected_visible();
-            }
+        KeyCode::PageDown if !app.strings_panel.results.is_empty() => {
+            let max = app.strings_panel.results.len() - 1;
+            let step = app.strings_panel.visible_rows.saturating_sub(1).max(1);
+            app.strings_panel.selected = (app.strings_panel.selected + step).min(max);
+            app.strings_panel.ensure_selected_visible();
         }
 
         // Page up

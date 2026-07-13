@@ -5,10 +5,10 @@
   "title": "Adopt SpecSync 5.0.1 and Trust 1.0.0 for Corvid Hex",
   "description": "Adopt SpecSync 5.0.1 and Trust 1.0.0 for Corvid Hex",
   "kind": "migration",
-  "state": "draft",
+  "state": "accepted",
   "base_commit": "06679cad2d50877fe7c455b9e4d9a7ac53478f9e",
   "created_at": 1783887244,
-  "updated_at": 1783887251,
+  "updated_at": 1783950168,
   "affected_specs": [],
   "affected_paths": [
     ".github/",
@@ -17,10 +17,12 @@
     ".augur.toml",
     ".attest.json",
     "fledge.toml",
-    "AGENTS.md"
+    "AGENTS.md",
+    "src/input.rs",
+    "src/main.rs"
   ],
   "no_spec_change": true,
-  "no_spec_change_rationale": "Governance and CI orchestration only; Rust and Bun behavior, public interfaces, release artifacts, documentation, and Atlas publication are unchanged.",
+  "no_spec_change_rationale": "Governance and CI orchestration plus non-semantic Rust match-guard cleanup required by the current Clippy toolchain; Rust and Bun behavior, public interfaces, release artifacts, documentation, and Atlas publication are unchanged.",
   "acceptance_criteria": [
     "SpecSync remains at 100 percent; Rust clippy, Rust tests, and Bun tests pass; agents and Trust doctor are healthy; release, docs, Atlas, CLI, and library boundaries remain unchanged."
   ],

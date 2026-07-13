@@ -1,0 +1,18 @@
+{
+  "approvals": [
+    {
+      "gate": "definition",
+      "actor": "user:0xLeif",
+      "timestamp": 1783950294,
+      "digest": "bdc9afe6e0c71bdf1e836a3835beda398151e5b4375b2c36dd4cce12b713c691",
+      "note": "Authorized portable definition approval for removal of false-green test stubs; hosted CI and closing approval are not claimed."
+    },
+    {
+      "gate": "acceptance",
+      "actor": "user:0xLeif",
+      "timestamp": 1783950357,
+      "digest": "e7f6885ceb7fa1629fb762e9321ff74db8eca147222591edb297bd8c9e82790d",
+      "note": "Native verification passed after false-green cleanup: Clippy, 273 Rust unit tests, 4 mmap integration tests, and 40 genuine Bun tests."
+    }
+  ]
+}

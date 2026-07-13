@@ -8,6 +8,6 @@
     "skipLibCheck": true,
     "types": ["bun-types"]
   },
-  "include": ["tests/**/*.ts", "placeholder.test.ts"],
+  "include": ["tests/**/*.ts"],
   "exclude": ["node_modules", "target"]
 }

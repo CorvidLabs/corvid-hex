@@ -8,4 +8,5 @@ artifact: tasks
 - [x] Add governance.
 - [x] Install integrations.
 - [x] Add native verification.
-- [ ] Obtain owner approvals.
+- [x] Record the authorized definition approval as `user:0xLeif`.
+- [x] Prepare the change artifacts for verification and a later closing-approval decision.

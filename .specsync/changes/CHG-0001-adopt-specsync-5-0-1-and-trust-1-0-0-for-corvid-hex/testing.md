@@ -5,4 +5,4 @@ artifact: testing
 
 # Testing
 
-Run repository-native verification, agent status, Trust doctor, strict SpecSync validation, and hosted checks.
+Run repository-native Clippy, Rust tests, and Bun tests, then verify agent status, Trust doctor, strict SpecSync validation, and hosted checks. Existing navigation tests cover the match-guard cleanup.
