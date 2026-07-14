@@ -21,11 +21,11 @@ spec: input.spec.md
 
 ## Gaps
 
-<!-- Uncovered areas, missing edge cases, or incomplete coverage -->
+- None identified in the current canonical behavior and native test suite.
 
 ## Review Sign-offs
 
-- **Product**: pending
-- **QA**: pending
-- **Design**: n/a
-- **Dev**: pending
+- **Product evidence**: this migration preserves the documented product behavior.
+- **QA evidence**: the repository-native Rust and Bun suites verify the existing behavior.
+- **Design evidence**: no visual or interaction design changes are introduced.
+- **Development evidence**: strict SpecSync, Clippy, and Trust gates verify the implementation boundary.

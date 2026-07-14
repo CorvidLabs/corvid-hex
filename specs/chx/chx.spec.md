@@ -1,6 +1,6 @@
 ---
 module: chx
-version: 1
+version: 3
 status: draft
 files:
   - src/main.rs
@@ -133,3 +133,10 @@ Core application module for the `chx` hex editor. Defines the application state 
 | 2026-03-30 | Add offset_from_screen export for mouse coordinate mapping |
 | 2026-03-30 | Add strings extraction: StringsPanel, StringEntry, StringKind, extract_strings, export_strings, Strings mode |
 | 2026-03-30 | Add Inspector/InspectorEdit modes, inspector state fields, :inspector command |
+| 2026-07-14 | CHG-0003-complete-the-specsync-5-and-trust-1-migration-with-strict-trust-enforcement-com: Complete the SpecSync 5 and Trust 1 migration with strict Trust enforcement, complete governance-path coverage, and stable IDs for every existing requirement companion |
+| 2026-07-14 | CHG-0004-preserve-progressive-provenance-while-making-specsync-warnings-blocking-inside-t: Preserve progressive provenance while making SpecSync warnings blocking inside the unified Trust lifecycle lane |
+
+## Governance
+
+The unified Trust gate runs released SpecSync 5.0.1 in forced strict mode at 100 percent through the configured Fledge lifecycle before native verification. Trust provenance remains progressive until the repository publishes a signed remote attestation ledger. This governance does not alter Corvid Hex product behavior or public interfaces.
+

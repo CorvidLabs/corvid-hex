@@ -1,6 +1,6 @@
 ---
 module: buffer
-version: 1
+version: 2
 status: draft
 files:
   - src/buffer.rs
@@ -104,3 +104,4 @@ Provides a copy-on-open file buffer with a sparse edit overlay. For files under 
 |------|-------------|
 | 2026-03-29 | Initial spec |
 | 2026-03-29 | Add undo/redo to Public API, invariants, and behavioral examples |
+| 2026-07-14 | CHG-0003-complete-the-specsync-5-and-trust-1-migration-with-strict-trust-enforcement-com: Complete the SpecSync 5 and Trust 1 migration with strict Trust enforcement, complete governance-path coverage, and stable IDs for every existing requirement companion |

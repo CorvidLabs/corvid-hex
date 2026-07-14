@@ -6,9 +6,10 @@
   "description": "Adopt SpecSync 5.0.1 and Trust 1.0.0 for Corvid Hex",
   "kind": "migration",
   "state": "accepted",
+  "canonical_applied": true,
   "base_commit": "06679cad2d50877fe7c455b9e4d9a7ac53478f9e",
   "created_at": 1783887244,
-  "updated_at": 1783950168,
+  "updated_at": 1784014939,
   "affected_specs": [],
   "affected_paths": [
     ".github/",

@@ -1,0 +1,26 @@
+{
+  "timestamp": 1784014834,
+  "commit": "2a9437007a7311568365522d7d80ffa7034bcea7",
+  "contract_digest": "61bf3a54bd7f1c91933768215a80766348570651c74137023b2536f00a86fd66",
+  "workspace_digest": "f73cacb866bd6543d15aada681ae733fdc3b074ce517a3d8a75af0b5a197553c",
+  "acceptance_input_digest": "f16f5631dba5025f243dd2aa4a9fb84c074ea10343789119895d205558e6d158",
+  "passed": true,
+  "commands": [
+    {
+      "command": "cargo clippy -- -D warnings",
+      "success": true,
+      "exit_code": 0
+    },
+    {
+      "command": "cargo test",
+      "success": true,
+      "exit_code": 0
+    },
+    {
+      "command": "bun test",
+      "success": true,
+      "exit_code": 0
+    }
+  ],
+  "requirement_ids": []
+}

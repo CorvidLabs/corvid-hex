@@ -10,11 +10,7 @@ spec: buffer.spec.md
 
 ## Acceptance Criteria
 
-- Files under 100 MB are read fully into memory for fast random access
-- Files over 100 MB use memory-mapped I/O to avoid excessive memory usage
-- Edits are stored in a sparse overlay and only flushed on explicit save
-- Undo/redo stack tracks all byte modifications with correct offset tracking
-- `is_dirty` accurately reflects whether unsaved changes exist
+Stable, testable requirements are listed by ID after the scope sections.
 
 ## Constraints
 
@@ -25,3 +21,38 @@ spec: buffer.spec.md
 
 - Concurrent file access / file locking
 - Network or remote file support
+
+### REQ-buffer-001
+
+The buffer SHALL read files under 100 MB fully into memory for fast random access.
+
+Acceptance Criteria
+- Opening a file smaller than 100 MB selects the in-memory backing.
+
+### REQ-buffer-002
+
+The buffer SHALL use memory-mapped I/O for files over 100 MB to avoid excessive memory usage.
+
+Acceptance Criteria
+- Opening a file larger than 100 MB selects the memory-mapped backing.
+
+### REQ-buffer-003
+
+The buffer SHALL store edits in a sparse overlay and flush them only on explicit save.
+
+Acceptance Criteria
+- An edit changes the overlay without changing the persisted file until save is invoked.
+
+### REQ-buffer-004
+
+The buffer SHALL track all byte modifications in its undo and redo stacks with correct offsets.
+
+Acceptance Criteria
+- Undo and redo restore the expected byte at the original edit offset.
+
+### REQ-buffer-005
+
+`is_dirty` SHALL accurately report whether unsaved changes exist.
+
+Acceptance Criteria
+- `is_dirty` is true after an effective edit and false after the edits are reverted or saved.

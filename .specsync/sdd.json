@@ -26,6 +26,11 @@
     ".specsync/config.toml",
     ".specsync/config.json",
     ".specsync/version"
+    ,".trust.toml"
+    ,"fledge.toml"
+    ,".augur.toml"
+    ,".attest.json"
+    ,"AGENTS.md"
   ],
   "ignored_paths": [],
   "verification_commands": [

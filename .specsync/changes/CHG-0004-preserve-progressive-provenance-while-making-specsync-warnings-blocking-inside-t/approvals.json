@@ -1,0 +1,19 @@
+{
+  "approvals": [
+    {
+      "gate": "definition",
+      "actor": "user:0xLeif",
+      "timestamp": 1784014674,
+      "digest": "d67ccf846d8e18ed0741b236ec5e71dfbad084bc3240fb80e64a134804c5a5b2",
+      "note": "Definition approved to document the unified Trust lifecycle architecture without changing Corvid Hex product behavior."
+    },
+    {
+      "gate": "acceptance",
+      "actor": "user:0xLeif",
+      "timestamp": 1784014774,
+      "digest": "694953248845691c5d985cc6bcdff4e3a862989bcbbad3ccbb87b1f6261a533e",
+      "note": "Closing approval after the documented unified-gate design passed Clippy, 273 Rust unit tests, 4 mmap integration tests, and 40 genuine Bun tests. Hosted checks are not claimed."
+    }
+  ],
+  "reopenings": []
+}

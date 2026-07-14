@@ -13,6 +13,110 @@
       "timestamp": 1783950168,
       "digest": "6e547ebe449d6e9654a02be8cc02b54de036c8dc8b5a4ef5c7d1f823ff2bc058",
       "note": "Native verification passed after removing false placeholder tests: Clippy, 273 Rust tests, 4 mmap tests, and 40 genuine Bun tests."
+    },
+    {
+      "gate": "acceptance",
+      "actor": "user:0xLeif",
+      "timestamp": 1784014347,
+      "digest": "4a95310f6209e76a9eb59509bda23db5bfb9e0e5f752d5268421bc275e79d1de",
+      "note": "Fresh closing approval for the final migration tree after Clippy, 273 Rust unit tests, 4 mmap integration tests, and 40 genuine Bun tests passed. Strict Trust policy and 52 canonical requirement IDs are present; hosted checks remain pending."
+    },
+    {
+      "gate": "acceptance",
+      "actor": "user:0xLeif",
+      "timestamp": 1784014939,
+      "digest": "fd632c4631fa685b3954ead31722743b053c59bb6632cb8c3ee314a7f875be3f",
+      "note": "Fresh closing approval for the final unified lifecycle: strict SpecSync at 100 percent precedes Clippy, 273 Rust unit tests, 4 mmap integration tests, and 40 Bun tests while provenance stays progressive. Hosted checks remain pending."
+    }
+  ],
+  "reopenings": [
+    {
+      "schema_version": 1,
+      "change_id": "CHG-0001-adopt-specsync-5-0-1-and-trust-1-0-0-for-corvid-hex",
+      "actor": "user:0xLeif",
+      "reason": "The final strict policy, complete meaningful paths, and canonical stable requirements changed delivery inputs while preserving the original migration contract.",
+      "timestamp": 1784014212,
+      "from_state": "accepted",
+      "to_state": "verifying",
+      "superseded_approval": {
+        "gate": "acceptance",
+        "actor": "user:0xLeif",
+        "timestamp": 1783950168,
+        "digest": "6e547ebe449d6e9654a02be8cc02b54de036c8dc8b5a4ef5c7d1f823ff2bc058",
+        "note": "Native verification passed after removing false placeholder tests: Clippy, 273 Rust tests, 4 mmap tests, and 40 genuine Bun tests."
+      },
+      "prior_verification": {
+        "timestamp": 1783950125,
+        "commit": "fe4be8367921c769a093e170d68cad9cc4857347",
+        "contract_digest": "ced3f9b2e12b6129e2a61b9f389ed18c5b1f9e9d513fee4e36f7f15163d5664f",
+        "workspace_digest": "d6eb00e1b667cc50da0e0302572721881f4c67ebbe87d46e3e9e79d5afb94860",
+        "acceptance_input_digest": "faf4262d8a3d3e3bd2a005b6b80a140fef1819b86ebff6dfee50e32ca5804c08",
+        "passed": true,
+        "commands": [
+          {
+            "command": "cargo clippy -- -D warnings",
+            "success": true,
+            "exit_code": 0
+          },
+          {
+            "command": "cargo test",
+            "success": true,
+            "exit_code": 0
+          },
+          {
+            "command": "bun test",
+            "success": true,
+            "exit_code": 0
+          }
+        ],
+        "requirement_ids": []
+      },
+      "stale_acceptance_input_digest": "faf4262d8a3d3e3bd2a005b6b80a140fef1819b86ebff6dfee50e32ca5804c08",
+      "current_acceptance_input_digest": "5b6414e5adb04849654a76901548c3c9e3c19bd62214c173337f21acffa8b616"
+    },
+    {
+      "schema_version": 1,
+      "change_id": "CHG-0001-adopt-specsync-5-0-1-and-trust-1-0-0-for-corvid-hex",
+      "actor": "user:0xLeif",
+      "reason": "The final unified-lifecycle correction changed Trust and Fledge delivery inputs after the prior closing evidence.",
+      "timestamp": 1784014857,
+      "from_state": "accepted",
+      "to_state": "verifying",
+      "superseded_approval": {
+        "gate": "acceptance",
+        "actor": "user:0xLeif",
+        "timestamp": 1784014347,
+        "digest": "4a95310f6209e76a9eb59509bda23db5bfb9e0e5f752d5268421bc275e79d1de",
+        "note": "Fresh closing approval for the final migration tree after Clippy, 273 Rust unit tests, 4 mmap integration tests, and 40 genuine Bun tests passed. Strict Trust policy and 52 canonical requirement IDs are present; hosted checks remain pending."
+      },
+      "prior_verification": {
+        "timestamp": 1784014341,
+        "commit": "2a9437007a7311568365522d7d80ffa7034bcea7",
+        "contract_digest": "ced3f9b2e12b6129e2a61b9f389ed18c5b1f9e9d513fee4e36f7f15163d5664f",
+        "workspace_digest": "a0e4cc53cc158f4aab3bd68fc5871463d7f89ee00fd404495bc7193027a463c6",
+        "acceptance_input_digest": "5b6414e5adb04849654a76901548c3c9e3c19bd62214c173337f21acffa8b616",
+        "passed": true,
+        "commands": [
+          {
+            "command": "cargo clippy -- -D warnings",
+            "success": true,
+            "exit_code": 0
+          },
+          {
+            "command": "cargo test",
+            "success": true,
+            "exit_code": 0
+          },
+          {
+            "command": "bun test",
+            "success": true,
+            "exit_code": 0
+          }
+        ],
+        "requirement_ids": []
+      },
+      "stale_acceptance_input_digest": "5b6414e5adb04849654a76901548c3c9e3c19bd62214c173337f21acffa8b616",
+      "current_acceptance_input_digest": "47298ce0a3a635ce56141bf99dd1e88b3fb597c3438e03428ce8fae6b5b54e5f"
     }
   ]
 }

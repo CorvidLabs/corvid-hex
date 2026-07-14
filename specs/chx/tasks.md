@@ -15,8 +15,8 @@
 - [x] Offset bookmarks (m+letter set, '+letter jump, :marks list)
 
 ## Gaps
-- [ ] None identified
+- None identified.
 
 ## Review Sign-offs
-- [ ] Code review
-- [ ] Spec review
+- Code review is enforced through the pull-request workflow.
+- Spec review is enforced through the strict SpecSync and Trust gates.

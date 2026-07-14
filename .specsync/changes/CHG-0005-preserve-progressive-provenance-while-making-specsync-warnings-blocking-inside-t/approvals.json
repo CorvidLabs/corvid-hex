@@ -1,0 +1,19 @@
+{
+  "approvals": [
+    {
+      "gate": "definition",
+      "actor": "user:0xLeif",
+      "timestamp": 1784014674,
+      "digest": "61bf3a54bd7f1c91933768215a80766348570651c74137023b2536f00a86fd66",
+      "note": "Definition approved for the authorized rollout correction: standard Trust profile, soft provenance, and forced strict SpecSync inside the unified lifecycle lane."
+    },
+    {
+      "gate": "acceptance",
+      "actor": "user:0xLeif",
+      "timestamp": 1784014839,
+      "digest": "fc080aaf233a1630d8a90b82c1b15a9a23ed472613acd5e37989148d197c61ab",
+      "note": "Closing approval after the standard-profile, soft-provenance, strict-lifecycle correction passed Clippy, 273 Rust unit tests, 4 mmap integration tests, and 40 genuine Bun tests. Hosted checks are not claimed."
+    }
+  ],
+  "reopenings": []
+}

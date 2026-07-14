@@ -1,6 +1,6 @@
 ---
 module: diff_render
-version: 1
+version: 2
 status: draft
 files:
   - src/diff_render.rs
@@ -71,3 +71,4 @@ Renders the terminal UI for binary diff mode. Draws a split-pane view with the l
 | Date | Description |
 |------|-------------|
 | 2026-03-30 | Initial spec for diff rendering |
+| 2026-07-14 | CHG-0003-complete-the-specsync-5-and-trust-1-migration-with-strict-trust-enforcement-com: Complete the SpecSync 5 and Trust 1 migration with strict Trust enforcement, complete governance-path coverage, and stable IDs for every existing requirement companion |

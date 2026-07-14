@@ -5,56 +5,5 @@
     "path": ".specsync/sdd.json"
   },
   "generated_at": 1783887155,
-  "requirements_needing_ids": [
-    {
-      "action": "review and assign one stable ID per durable requirement",
-      "path": "specs/inspector/requirements.md",
-      "suggested_first_id": "REQ-inspector-001"
-    },
-    {
-      "action": "review and assign one stable ID per durable requirement",
-      "path": "specs/input/requirements.md",
-      "suggested_first_id": "REQ-input-001"
-    },
-    {
-      "action": "review and assign one stable ID per durable requirement",
-      "path": "specs/entropy/requirements.md",
-      "suggested_first_id": "REQ-entropy-001"
-    },
-    {
-      "action": "review and assign one stable ID per durable requirement",
-      "path": "specs/render/requirements.md",
-      "suggested_first_id": "REQ-render-001"
-    },
-    {
-      "action": "review and assign one stable ID per durable requirement",
-      "path": "specs/diff/requirements.md",
-      "suggested_first_id": "REQ-diff-001"
-    },
-    {
-      "action": "review and assign one stable ID per durable requirement",
-      "path": "specs/search/requirements.md",
-      "suggested_first_id": "REQ-search-001"
-    },
-    {
-      "action": "review and assign one stable ID per durable requirement",
-      "path": "specs/chx/requirements.md",
-      "suggested_first_id": "REQ-chx-001"
-    },
-    {
-      "action": "review and assign one stable ID per durable requirement",
-      "path": "specs/format/requirements.md",
-      "suggested_first_id": "REQ-format-001"
-    },
-    {
-      "action": "review and assign one stable ID per durable requirement",
-      "path": "specs/diff_render/requirements.md",
-      "suggested_first_id": "REQ-diff-render-001"
-    },
-    {
-      "action": "review and assign one stable ID per durable requirement",
-      "path": "specs/buffer/requirements.md",
-      "suggested_first_id": "REQ-buffer-001"
-    }
-  ]
+  "requirements_needing_ids": []
 }

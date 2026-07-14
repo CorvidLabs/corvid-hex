@@ -1,6 +1,6 @@
 ---
 module: input
-version: 1
+version: 2
 status: draft
 files:
   - src/input.rs
@@ -119,3 +119,4 @@ Translates keyboard events into application actions for a terminal hex editor. A
 | 2026-03-30 | Add bookmark two-key sequences (m+letter, '+letter), Visual mode handler |
 | 2026-03-30 | Add handle_mouse export for mouse click, drag, and scroll support |
 | 2026-03-30 | Add Inspector and InspectorEdit mode handlers |
+| 2026-07-14 | CHG-0003-complete-the-specsync-5-and-trust-1-migration-with-strict-trust-enforcement-com: Complete the SpecSync 5 and Trust 1 migration with strict Trust enforcement, complete governance-path coverage, and stable IDs for every existing requirement companion |

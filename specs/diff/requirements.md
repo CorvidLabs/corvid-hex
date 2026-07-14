@@ -9,10 +9,7 @@ spec: diff.spec.md
 
 ## Acceptance Criteria
 
-- Both files are loaded and compared byte-by-byte, producing a sorted list of differing offsets
-- Navigation between diffs supports forward and backward traversal with wraparound
-- Diff count and current position are tracked for display in the UI
-- Files of different lengths correctly report differences in the trailing region
+Stable, testable requirements are listed by ID after the scope sections.
 
 ## Constraints
 
@@ -22,3 +19,31 @@ spec: diff.spec.md
 
 - Structural or semantic diffing (e.g., ELF section comparison)
 - Three-way merge
+
+### REQ-diff-001
+
+The diff engine SHALL compare both loaded files byte by byte and produce a sorted list of differing offsets.
+
+Acceptance Criteria
+- Returned offsets are ascending and contain every unequal byte position.
+
+### REQ-diff-002
+
+Diff navigation SHALL support forward and backward traversal with wraparound.
+
+Acceptance Criteria
+- Next from the last difference and previous from the first difference wrap to the opposite end.
+
+### REQ-diff-003
+
+The diff state SHALL track the total difference count and current position for UI display.
+
+Acceptance Criteria
+- The displayed count and position match the active difference list and selection.
+
+### REQ-diff-004
+
+The diff engine SHALL report trailing-region differences when the files have different lengths.
+
+Acceptance Criteria
+- Every offset present only in the longer file is reported as different.
