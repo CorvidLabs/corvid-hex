@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "id": "CHG-0002-remove-false-positive-bun-placeholder-tests-while-retaining-genuine-rust-and-str",
+  "slug": "remove-false-positive-bun-placeholder-tests-while-retaining-genuine-rust-and-str",
+  "title": "Remove false-positive Bun placeholder tests while retaining genuine Rust and structural verification",
+  "description": "Remove false-positive Bun placeholder tests while retaining genuine Rust and structural verification",
+  "kind": "refactor",
+  "state": "accepted",
+  "base_commit": "fe4be8367921c769a093e170d68cad9cc4857347",
+  "created_at": 1783950231,
+  "updated_at": 1783957799,
+  "affected_specs": [],
+  "affected_paths": [
+    "tests/",
+    "placeholder.test.ts",
+    "validate.test.ts",
+    "tsconfig.json"
+  ],
+  "no_spec_change": true,
+  "no_spec_change_rationale": "The cleanup removes always-green test stubs and narrows TypeScript test discovery without changing Corvid Hex runtime behavior or canonical requirement semantics.",
+  "acceptance_criteria": [
+    "All always-green Bun placeholder and stub tests are removed; TypeScript discovery includes only genuine tests; cargo clippy passes with warnings denied; 273 Rust unit tests, 4 mmap integration tests, and 40 genuine Bun tests pass; strict SpecSync and Trust remain healthy."
+  ],
+  "selected_artifacts": [
+    "context",
+    "plan",
+    "testing"
+  ],
+  "dependencies": [],
+  "answers": {
+    "architecture_risk": "no",
+    "public_contract": "no"
+  }
+}

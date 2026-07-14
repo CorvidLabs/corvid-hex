@@ -31,7 +31,7 @@ describe("Rust unit tests (cargo test)", () => {
       throw result.error;
     }
     expect(result.status).toBe(0);
-  });
+  }, 120_000);
 });
 
 // ─── Magic byte validation ────────────────────────────────────────────────────

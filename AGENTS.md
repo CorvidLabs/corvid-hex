@@ -38,3 +38,9 @@ Run `specsync add-spec <module-name>` to scaffold the spec and companion files, 
 - `specsync score` — quality score for each spec (0-100)
 - `specsync add-spec <name>` — scaffold a new spec with companion files
 - `specsync resolve --remote` — verify cross-project dependencies
+<!-- CorvidLabs trust toolchain: BEGIN (managed, do not edit inside) -->
+## CorvidLabs trust toolchain
+- Use SpecSync 5 at the existing 100% threshold and keep all four agents installed.
+- Treat `.trust.toml` as policy authority; preserve Rust/Bun behavior, public CLI/library interfaces, cross-platform releases, Rustdoc, and independent Atlas badge publication.
+- Do not approve or close an SDD change on behalf of a human owner.
+<!-- CorvidLabs trust toolchain: END (managed, do not edit inside) -->

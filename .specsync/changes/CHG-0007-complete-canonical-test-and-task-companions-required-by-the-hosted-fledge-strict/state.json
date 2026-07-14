@@ -1,0 +1,50 @@
+{
+  "schema_version": 1,
+  "id": "CHG-0007-complete-canonical-test-and-task-companions-required-by-the-hosted-fledge-strict",
+  "slug": "complete-canonical-test-and-task-companions-required-by-the-hosted-fledge-strict",
+  "title": "Complete canonical test and task companions required by the hosted Fledge strict structural gate",
+  "description": "Complete canonical test and task companions required by the hosted Fledge strict structural gate",
+  "kind": "documentation",
+  "state": "accepted",
+  "canonical_applied": true,
+  "base_commit": "308cecbd90eb484cf364546679ad8d02e6623cda",
+  "created_at": 1784016094,
+  "updated_at": 1784016382,
+  "affected_specs": [
+    "buffer",
+    "chx",
+    "diff",
+    "diff_render",
+    "entropy",
+    "format",
+    "input",
+    "inspector",
+    "render",
+    "search"
+  ],
+  "affected_paths": [
+    "specs",
+    ".specsync/change-sequence.json"
+  ],
+  "no_spec_change": false,
+  "no_spec_change_rationale": null,
+  "acceptance_criteria": [
+    "Every canonical module has complete truthful task and testing companions",
+    "Fledge strict structural validation reports zero warnings",
+    "and released SpecSync remains at 100 percent coverage without changing product behavior."
+  ],
+  "selected_artifacts": [
+    "context",
+    "docs",
+    "design",
+    "tasks",
+    "research",
+    "plan",
+    "testing"
+  ],
+  "dependencies": [],
+  "answers": {
+    "architecture_risk": "yes",
+    "public_contract": "no"
+  }
+}

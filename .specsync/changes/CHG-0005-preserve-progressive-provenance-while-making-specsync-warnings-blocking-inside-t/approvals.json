@@ -1,0 +1,122 @@
+{
+  "approvals": [
+    {
+      "gate": "definition",
+      "actor": "user:0xLeif",
+      "timestamp": 1784014674,
+      "digest": "61bf3a54bd7f1c91933768215a80766348570651c74137023b2536f00a86fd66",
+      "note": "Definition approved for the authorized rollout correction: standard Trust profile, soft provenance, and forced strict SpecSync inside the unified lifecycle lane."
+    },
+    {
+      "gate": "acceptance",
+      "actor": "user:0xLeif",
+      "timestamp": 1784014839,
+      "digest": "fc080aaf233a1630d8a90b82c1b15a9a23ed472613acd5e37989148d197c61ab",
+      "note": "Closing approval after the standard-profile, soft-provenance, strict-lifecycle correction passed Clippy, 273 Rust unit tests, 4 mmap integration tests, and 40 genuine Bun tests. Hosted checks are not claimed."
+    },
+    {
+      "gate": "acceptance",
+      "actor": "user:0xLeif",
+      "timestamp": 1784015901,
+      "digest": "41ce2776219d5cb5bc840af7cfc3fb99cc7b03e6f98ae609e5a1f61cb1833959",
+      "note": "Fresh closing approval after the final Fledge-native hosted portability input passed the full native verification contract; hosted checks remain pending."
+    },
+    {
+      "gate": "acceptance",
+      "actor": "user:0xLeif",
+      "timestamp": 1784016677,
+      "digest": "4e571d36cd8562fb2c19a540d508947203127adeebc99cb9ced81d554dd70b3a",
+      "note": "Fresh closing approval after truthful companion completion passed the full native verification contract; hosted checks remain pending."
+    }
+  ],
+  "reopenings": [
+    {
+      "schema_version": 1,
+      "change_id": "CHG-0005-preserve-progressive-provenance-while-making-specsync-warnings-blocking-inside-t",
+      "actor": "user:0xLeif",
+      "reason": "The hosted-runner portability correction changed the final Fledge lifecycle delivery input after the prior acceptance evidence.",
+      "timestamp": 1784015621,
+      "from_state": "accepted",
+      "to_state": "verifying",
+      "superseded_approval": {
+        "gate": "acceptance",
+        "actor": "user:0xLeif",
+        "timestamp": 1784014839,
+        "digest": "fc080aaf233a1630d8a90b82c1b15a9a23ed472613acd5e37989148d197c61ab",
+        "note": "Closing approval after the standard-profile, soft-provenance, strict-lifecycle correction passed Clippy, 273 Rust unit tests, 4 mmap integration tests, and 40 genuine Bun tests. Hosted checks are not claimed."
+      },
+      "prior_verification": {
+        "timestamp": 1784014834,
+        "commit": "2a9437007a7311568365522d7d80ffa7034bcea7",
+        "contract_digest": "61bf3a54bd7f1c91933768215a80766348570651c74137023b2536f00a86fd66",
+        "workspace_digest": "f73cacb866bd6543d15aada681ae733fdc3b074ce517a3d8a75af0b5a197553c",
+        "acceptance_input_digest": "f16f5631dba5025f243dd2aa4a9fb84c074ea10343789119895d205558e6d158",
+        "passed": true,
+        "commands": [
+          {
+            "command": "cargo clippy -- -D warnings",
+            "success": true,
+            "exit_code": 0
+          },
+          {
+            "command": "cargo test",
+            "success": true,
+            "exit_code": 0
+          },
+          {
+            "command": "bun test",
+            "success": true,
+            "exit_code": 0
+          }
+        ],
+        "requirement_ids": []
+      },
+      "stale_acceptance_input_digest": "f16f5631dba5025f243dd2aa4a9fb84c074ea10343789119895d205558e6d158",
+      "current_acceptance_input_digest": "ea4f60b42847a227401dc6ed5c607d908b5a0a862533476e32eb5e74698a2cf0"
+    },
+    {
+      "schema_version": 1,
+      "change_id": "CHG-0005-preserve-progressive-provenance-while-making-specsync-warnings-blocking-inside-t",
+      "actor": "user:0xLeif",
+      "reason": "Canonical companion completion changed final delivery inputs after prior acceptance.",
+      "timestamp": 1784016422,
+      "from_state": "accepted",
+      "to_state": "verifying",
+      "superseded_approval": {
+        "gate": "acceptance",
+        "actor": "user:0xLeif",
+        "timestamp": 1784015901,
+        "digest": "41ce2776219d5cb5bc840af7cfc3fb99cc7b03e6f98ae609e5a1f61cb1833959",
+        "note": "Fresh closing approval after the final Fledge-native hosted portability input passed the full native verification contract; hosted checks remain pending."
+      },
+      "prior_verification": {
+        "timestamp": 1784015900,
+        "commit": "3c9ef4eb1c03c1bb643206fb9509d0d0c17a03a3",
+        "contract_digest": "61bf3a54bd7f1c91933768215a80766348570651c74137023b2536f00a86fd66",
+        "workspace_digest": "b9a710431a03c7e9fe5d365a437ee593083982d2f7e1d2783aed8969eaf05a8f",
+        "acceptance_input_digest": "ea4f60b42847a227401dc6ed5c607d908b5a0a862533476e32eb5e74698a2cf0",
+        "passed": true,
+        "commands": [
+          {
+            "command": "cargo clippy -- -D warnings",
+            "success": true,
+            "exit_code": 0
+          },
+          {
+            "command": "cargo test",
+            "success": true,
+            "exit_code": 0
+          },
+          {
+            "command": "bun test",
+            "success": true,
+            "exit_code": 0
+          }
+        ],
+        "requirement_ids": []
+      },
+      "stale_acceptance_input_digest": "ea4f60b42847a227401dc6ed5c607d908b5a0a862533476e32eb5e74698a2cf0",
+      "current_acceptance_input_digest": "054e925da7e96ea03519fdb9588b40b52d3e1624bafdccefe5b6f174d56e9d1c"
+    }
+  ]
+}

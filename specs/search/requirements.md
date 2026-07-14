@@ -10,11 +10,7 @@ spec: search.spec.md
 
 ## Acceptance Criteria
 
-- Search supports ASCII string queries and hex byte patterns (e.g., `FF D8 FF`)
-- Case-insensitive search is available for ASCII queries
-- All matches in the buffer are found and navigable with next/previous
-- Search results update the cursor position and scroll the view to the match
-- Invalid hex patterns produce a clear error message
+Stable, testable requirements are listed by ID after the scope sections.
 
 ## Constraints
 
@@ -24,3 +20,38 @@ spec: search.spec.md
 
 - Regex search
 - Search and replace (edit mode handles byte modification)
+
+### REQ-search-001
+
+Search SHALL support ASCII string queries and hexadecimal byte patterns such as `FF D8 FF`.
+
+Acceptance Criteria
+- Representative ASCII and hexadecimal queries return their matching offsets.
+
+### REQ-search-002
+
+Search SHALL provide case-insensitive matching for ASCII queries.
+
+Acceptance Criteria
+- A case-insensitive query matches equivalent ASCII text with different letter case.
+
+### REQ-search-003
+
+Search SHALL find all matches in the buffer and allow next and previous navigation among them.
+
+Acceptance Criteria
+- The result list includes every occurrence and navigation cycles through the list.
+
+### REQ-search-004
+
+Selecting a search result SHALL move the cursor to the match and scroll it into view.
+
+Acceptance Criteria
+- Activating a result updates cursor and viewport to its starting offset.
+
+### REQ-search-005
+
+Search SHALL report a clear error for invalid hexadecimal patterns.
+
+Acceptance Criteria
+- A malformed hex query returns an explanatory error without starting a search.

@@ -172,10 +172,8 @@ fn run_diff(
                     }
 
                     KeyCode::Char('g') => state.move_cursor_to(0),
-                    KeyCode::Char('G') => {
-                        if state.max_len() > 0 {
-                            state.move_cursor_to(state.max_len() - 1);
-                        }
+                    KeyCode::Char('G') if state.max_len() > 0 => {
+                        state.move_cursor_to(state.max_len() - 1);
                     }
 
                     KeyCode::PageDown => state.page_down(),

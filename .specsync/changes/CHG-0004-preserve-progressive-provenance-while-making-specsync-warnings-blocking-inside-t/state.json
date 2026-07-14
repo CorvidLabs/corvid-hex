@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "id": "CHG-0004-preserve-progressive-provenance-while-making-specsync-warnings-blocking-inside-t",
+  "slug": "preserve-progressive-provenance-while-making-specsync-warnings-blocking-inside-t",
+  "title": "Preserve progressive provenance while making SpecSync warnings blocking inside the unified Trust lifecycle lane",
+  "description": "Preserve progressive provenance while making SpecSync warnings blocking inside the unified Trust lifecycle lane",
+  "kind": "feature",
+  "state": "accepted",
+  "canonical_applied": true,
+  "base_commit": "2a9437007a7311568365522d7d80ffa7034bcea7",
+  "created_at": 1784014529,
+  "updated_at": 1784016677,
+  "affected_specs": [
+    "chx"
+  ],
+  "affected_paths": [
+    ".specsync/change-sequence.json"
+  ],
+  "no_spec_change": false,
+  "no_spec_change_rationale": null,
+  "acceptance_criteria": [
+    "Trust uses the standard profile with soft provenance",
+    "and its Fledge lifecycle runs forced strict SpecSync at 100 percent before native checks so warnings block the unified Trust gate while local and hosted Trust can pass."
+  ],
+  "selected_artifacts": [
+    "context",
+    "requirements",
+    "plan",
+    "tasks",
+    "testing",
+    "docs",
+    "research",
+    "design"
+  ],
+  "dependencies": [],
+  "answers": {
+    "architecture_risk": "yes",
+    "no_spec_change": "yes",
+    "public_contract": "no"
+  }
+}

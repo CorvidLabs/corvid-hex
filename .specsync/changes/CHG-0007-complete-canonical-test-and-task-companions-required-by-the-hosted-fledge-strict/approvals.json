@@ -1,0 +1,19 @@
+{
+  "approvals": [
+    {
+      "gate": "definition",
+      "actor": "user:0xLeif",
+      "timestamp": 1784016316,
+      "digest": "57841a80123735f2d4b46aa0d6abce40a8ef152e6a5436933f07cf0823f66993",
+      "note": "Definition approved for truthful canonical companion completion; hosted success remains pending."
+    },
+    {
+      "gate": "acceptance",
+      "actor": "user:0xLeif",
+      "timestamp": 1784016382,
+      "digest": "96fbbe07e7214530c2a1c14317d519ecc36c922fe2ddaf7cfe5b83371ebeaa1d",
+      "note": "Closing approval follows successful full native verification; hosted checks remain pending."
+    }
+  ],
+  "reopenings": []
+}

@@ -1,0 +1,80 @@
+{
+  "schema_version": 1,
+  "attempts": [
+    {
+      "timestamp": 1784014768,
+      "commit": "2a9437007a7311568365522d7d80ffa7034bcea7",
+      "contract_digest": "d67ccf846d8e18ed0741b236ec5e71dfbad084bc3240fb80e64a134804c5a5b2",
+      "workspace_digest": "f2f23b2cf8c1d63e847935eda9803d9c1e262ada81696ce8c50b34846b4057bb",
+      "passed": true,
+      "commands": [
+        {
+          "command": "cargo clippy -- -D warnings",
+          "success": true,
+          "exit_code": 0
+        },
+        {
+          "command": "cargo test",
+          "success": true,
+          "exit_code": 0
+        },
+        {
+          "command": "bun test",
+          "success": true,
+          "exit_code": 0
+        }
+      ],
+      "requirement_ids": []
+    },
+    {
+      "timestamp": 1784015849,
+      "commit": "3c9ef4eb1c03c1bb643206fb9509d0d0c17a03a3",
+      "contract_digest": "d67ccf846d8e18ed0741b236ec5e71dfbad084bc3240fb80e64a134804c5a5b2",
+      "workspace_digest": "b9a710431a03c7e9fe5d365a437ee593083982d2f7e1d2783aed8969eaf05a8f",
+      "passed": true,
+      "commands": [
+        {
+          "command": "cargo clippy -- -D warnings",
+          "success": true,
+          "exit_code": 0
+        },
+        {
+          "command": "cargo test",
+          "success": true,
+          "exit_code": 0
+        },
+        {
+          "command": "bun test",
+          "success": true,
+          "exit_code": 0
+        }
+      ],
+      "requirement_ids": []
+    },
+    {
+      "timestamp": 1784016526,
+      "commit": "308cecbd90eb484cf364546679ad8d02e6623cda",
+      "contract_digest": "d67ccf846d8e18ed0741b236ec5e71dfbad084bc3240fb80e64a134804c5a5b2",
+      "workspace_digest": "5399dd565fbe3e53063c0124d0b828a96420d793ad4e9fa22268fb07b1e7ec79",
+      "passed": true,
+      "commands": [
+        {
+          "command": "cargo clippy -- -D warnings",
+          "success": true,
+          "exit_code": 0
+        },
+        {
+          "command": "cargo test",
+          "success": true,
+          "exit_code": 0
+        },
+        {
+          "command": "bun test",
+          "success": true,
+          "exit_code": 0
+        }
+      ],
+      "requirement_ids": []
+    }
+  ]
+}

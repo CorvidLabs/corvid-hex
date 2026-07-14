@@ -1,6 +1,6 @@
 ---
 module: format
-version: 1
+version: 3
 status: draft
 files:
   - src/format.rs
@@ -83,3 +83,11 @@ Provides a template system for parsing and labeling known binary file formats. T
 | Date | Description |
 |------|-------------|
 | 2026-03-30 | Initial spec for format template system |
+| 2026-07-14 | CHG-0003-complete-the-specsync-5-and-trust-1-migration-with-strict-trust-enforcement-com: Complete the SpecSync 5 and Trust 1 migration with strict Trust enforcement, complete governance-path coverage, and stable IDs for every existing requirement companion |
+| 2026-07-14 | CHG-0007: Document existing native verification and completed format tasks |
+| 2026-07-14 | CHG-0007-complete-canonical-test-and-task-companions-required-by-the-hosted-fledge-strict: Complete canonical test and task companions required by the hosted Fledge strict structural gate |
+
+## Verification
+
+Native verification evidence for this module is maintained in its testing companion and executed by the unified Trust lifecycle.
+
