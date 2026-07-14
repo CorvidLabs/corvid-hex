@@ -34,6 +34,13 @@
       "timestamp": 1784015043,
       "digest": "006688b6fc5ca0b7b47cdd9f692e1b63aeed473cb9c901a2bbb21953f1506b74",
       "note": "Fresh closing approval after the accepted successor preserves strict SpecSync enforcement inside the standard-profile Trust lifecycle, with progressive provenance. All 52 stable requirements, Clippy, 273 Rust unit tests, 4 mmap integration tests, and 40 Bun tests passed; hosted checks remain pending."
+    },
+    {
+      "gate": "acceptance",
+      "actor": "user:0xLeif",
+      "timestamp": 1784015795,
+      "digest": "50b3323c93062d5a970f07d6e8690c91acb1423440f2a7ea17721a730d7206c2",
+      "note": "Fresh closing approval after the final Fledge-native hosted portability input passed the full native verification contract; hosted checks remain pending."
     }
   ],
   "reopenings": [
@@ -230,6 +237,103 @@
       },
       "stale_acceptance_input_digest": "274591762943a9e324806ab69751d1c1af5ed677939e8f877ff3f7f263f08301",
       "current_acceptance_input_digest": "4054d10ed534af17c72e9f10fe8bce390af3baa6c2731fd1eb210935c3fe3076"
+    },
+    {
+      "schema_version": 1,
+      "change_id": "CHG-0003-complete-the-specsync-5-and-trust-1-migration-with-strict-trust-enforcement-com",
+      "actor": "user:0xLeif",
+      "reason": "The hosted-runner portability correction changed the final Fledge lifecycle delivery input after the prior acceptance evidence.",
+      "timestamp": 1784015619,
+      "from_state": "accepted",
+      "to_state": "verifying",
+      "superseded_approval": {
+        "gate": "acceptance",
+        "actor": "user:0xLeif",
+        "timestamp": 1784015043,
+        "digest": "006688b6fc5ca0b7b47cdd9f692e1b63aeed473cb9c901a2bbb21953f1506b74",
+        "note": "Fresh closing approval after the accepted successor preserves strict SpecSync enforcement inside the standard-profile Trust lifecycle, with progressive provenance. All 52 stable requirements, Clippy, 273 Rust unit tests, 4 mmap integration tests, and 40 Bun tests passed; hosted checks remain pending."
+      },
+      "prior_verification": {
+        "timestamp": 1784015034,
+        "commit": "2a9437007a7311568365522d7d80ffa7034bcea7",
+        "contract_digest": "a28ee020527d3c1a7e07c16fc7df8062785aad8cf871b27458c7b9a38fc19b55",
+        "workspace_digest": "f73cacb866bd6543d15aada681ae733fdc3b074ce517a3d8a75af0b5a197553c",
+        "acceptance_input_digest": "4054d10ed534af17c72e9f10fe8bce390af3baa6c2731fd1eb210935c3fe3076",
+        "passed": true,
+        "commands": [
+          {
+            "command": "cargo clippy -- -D warnings",
+            "success": true,
+            "exit_code": 0
+          },
+          {
+            "command": "cargo test",
+            "success": true,
+            "exit_code": 0
+          },
+          {
+            "command": "bun test",
+            "success": true,
+            "exit_code": 0
+          }
+        ],
+        "requirement_ids": [
+          "REQ-buffer-001",
+          "REQ-buffer-002",
+          "REQ-buffer-003",
+          "REQ-buffer-004",
+          "REQ-buffer-005",
+          "REQ-chx-001",
+          "REQ-chx-002",
+          "REQ-chx-003",
+          "REQ-chx-004",
+          "REQ-chx-005",
+          "REQ-diff-001",
+          "REQ-diff-002",
+          "REQ-diff-003",
+          "REQ-diff-004",
+          "REQ-diff-render-001",
+          "REQ-diff-render-002",
+          "REQ-diff-render-003",
+          "REQ-diff-render-004",
+          "REQ-diff-render-005",
+          "REQ-entropy-001",
+          "REQ-entropy-002",
+          "REQ-entropy-003",
+          "REQ-entropy-004",
+          "REQ-format-001",
+          "REQ-format-002",
+          "REQ-format-003",
+          "REQ-format-004",
+          "REQ-format-005",
+          "REQ-format-006",
+          "REQ-input-001",
+          "REQ-input-002",
+          "REQ-input-003",
+          "REQ-input-004",
+          "REQ-input-005",
+          "REQ-input-006",
+          "REQ-inspector-001",
+          "REQ-inspector-002",
+          "REQ-inspector-003",
+          "REQ-inspector-004",
+          "REQ-inspector-005",
+          "REQ-render-001",
+          "REQ-render-002",
+          "REQ-render-003",
+          "REQ-render-004",
+          "REQ-render-005",
+          "REQ-render-006",
+          "REQ-render-007",
+          "REQ-search-001",
+          "REQ-search-002",
+          "REQ-search-003",
+          "REQ-search-004",
+          "REQ-search-005"
+        ]
+      },
+      "stale_acceptance_input_digest": "4054d10ed534af17c72e9f10fe8bce390af3baa6c2731fd1eb210935c3fe3076",
+      "current_acceptance_input_digest": "f8e16ca4aea3fef66cad2a2b19b02b952cace78f52cc8c5a510a26651a1da0dc"
     }
   ]
 }

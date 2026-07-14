@@ -13,7 +13,59 @@
       "timestamp": 1784014774,
       "digest": "694953248845691c5d985cc6bcdff4e3a862989bcbbad3ccbb87b1f6261a533e",
       "note": "Closing approval after the documented unified-gate design passed Clippy, 273 Rust unit tests, 4 mmap integration tests, and 40 genuine Bun tests. Hosted checks are not claimed."
+    },
+    {
+      "gate": "acceptance",
+      "actor": "user:0xLeif",
+      "timestamp": 1784015849,
+      "digest": "d5b56a74693a557ccd601fa6512bf8c92bfe037e9605be2573098534935349a7",
+      "note": "Fresh closing approval after the final Fledge-native hosted portability input passed the full native verification contract; hosted checks remain pending."
     }
   ],
-  "reopenings": []
+  "reopenings": [
+    {
+      "schema_version": 1,
+      "change_id": "CHG-0004-preserve-progressive-provenance-while-making-specsync-warnings-blocking-inside-t",
+      "actor": "user:0xLeif",
+      "reason": "The hosted-runner portability correction changed the final Fledge lifecycle delivery input after the prior acceptance evidence.",
+      "timestamp": 1784015620,
+      "from_state": "accepted",
+      "to_state": "verifying",
+      "superseded_approval": {
+        "gate": "acceptance",
+        "actor": "user:0xLeif",
+        "timestamp": 1784014774,
+        "digest": "694953248845691c5d985cc6bcdff4e3a862989bcbbad3ccbb87b1f6261a533e",
+        "note": "Closing approval after the documented unified-gate design passed Clippy, 273 Rust unit tests, 4 mmap integration tests, and 40 genuine Bun tests. Hosted checks are not claimed."
+      },
+      "prior_verification": {
+        "timestamp": 1784014768,
+        "commit": "2a9437007a7311568365522d7d80ffa7034bcea7",
+        "contract_digest": "d67ccf846d8e18ed0741b236ec5e71dfbad084bc3240fb80e64a134804c5a5b2",
+        "workspace_digest": "f2f23b2cf8c1d63e847935eda9803d9c1e262ada81696ce8c50b34846b4057bb",
+        "acceptance_input_digest": "bd4c582dc343a53a3a42ba0ea4b9454bbad92275ad2529981294bec3a83e50ef",
+        "passed": true,
+        "commands": [
+          {
+            "command": "cargo clippy -- -D warnings",
+            "success": true,
+            "exit_code": 0
+          },
+          {
+            "command": "cargo test",
+            "success": true,
+            "exit_code": 0
+          },
+          {
+            "command": "bun test",
+            "success": true,
+            "exit_code": 0
+          }
+        ],
+        "requirement_ids": []
+      },
+      "stale_acceptance_input_digest": "bd4c582dc343a53a3a42ba0ea4b9454bbad92275ad2529981294bec3a83e50ef",
+      "current_acceptance_input_digest": "0f803b23659c8214edbac874b37b2ef628061bb5a1b193a5dd8b2d94b6701f6f"
+    }
+  ]
 }

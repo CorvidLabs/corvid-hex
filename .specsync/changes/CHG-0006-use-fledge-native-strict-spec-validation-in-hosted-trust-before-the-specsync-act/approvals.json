@@ -1,0 +1,19 @@
+{
+  "approvals": [
+    {
+      "gate": "definition",
+      "actor": "user:0xLeif",
+      "timestamp": 1784015444,
+      "digest": "f9aa338545904ce929f4fc4b90147fb44be3f06ae7d1523ab8eed4e932850ee8",
+      "note": "Definition approved for the hosted-runner portability correction; exact-head hosted success remains an acceptance condition."
+    },
+    {
+      "gate": "acceptance",
+      "actor": "user:0xLeif",
+      "timestamp": 1784015570,
+      "digest": "5d0e0bf9615fe944d6021e7d0e4eb758e17e01c46b03eced2c7b8d033c8abedd",
+      "note": "Closing approval follows successful local native verification; exact-head hosted Trust and CI remain required before readiness or merge."
+    }
+  ],
+  "reopenings": []
+}

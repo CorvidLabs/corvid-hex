@@ -27,6 +27,13 @@
       "timestamp": 1784014939,
       "digest": "fd632c4631fa685b3954ead31722743b053c59bb6632cb8c3ee314a7f875be3f",
       "note": "Fresh closing approval for the final unified lifecycle: strict SpecSync at 100 percent precedes Clippy, 273 Rust unit tests, 4 mmap integration tests, and 40 Bun tests while provenance stays progressive. Hosted checks remain pending."
+    },
+    {
+      "gate": "acceptance",
+      "actor": "user:0xLeif",
+      "timestamp": 1784015731,
+      "digest": "5ca936bd8d2f49e4c246b8beeccf0be7a493842fd2cc6e77f058f8a3bb5a8003",
+      "note": "Fresh closing approval after the final Fledge-native hosted portability input passed the full native verification contract; hosted checks remain pending."
     }
   ],
   "reopenings": [
@@ -117,6 +124,50 @@
       },
       "stale_acceptance_input_digest": "5b6414e5adb04849654a76901548c3c9e3c19bd62214c173337f21acffa8b616",
       "current_acceptance_input_digest": "47298ce0a3a635ce56141bf99dd1e88b3fb597c3438e03428ce8fae6b5b54e5f"
+    },
+    {
+      "schema_version": 1,
+      "change_id": "CHG-0001-adopt-specsync-5-0-1-and-trust-1-0-0-for-corvid-hex",
+      "actor": "user:0xLeif",
+      "reason": "The hosted-runner portability correction changed the final Fledge lifecycle delivery input after the prior acceptance evidence.",
+      "timestamp": 1784015617,
+      "from_state": "accepted",
+      "to_state": "verifying",
+      "superseded_approval": {
+        "gate": "acceptance",
+        "actor": "user:0xLeif",
+        "timestamp": 1784014939,
+        "digest": "fd632c4631fa685b3954ead31722743b053c59bb6632cb8c3ee314a7f875be3f",
+        "note": "Fresh closing approval for the final unified lifecycle: strict SpecSync at 100 percent precedes Clippy, 273 Rust unit tests, 4 mmap integration tests, and 40 Bun tests while provenance stays progressive. Hosted checks remain pending."
+      },
+      "prior_verification": {
+        "timestamp": 1784014930,
+        "commit": "2a9437007a7311568365522d7d80ffa7034bcea7",
+        "contract_digest": "ced3f9b2e12b6129e2a61b9f389ed18c5b1f9e9d513fee4e36f7f15163d5664f",
+        "workspace_digest": "f73cacb866bd6543d15aada681ae733fdc3b074ce517a3d8a75af0b5a197553c",
+        "acceptance_input_digest": "47298ce0a3a635ce56141bf99dd1e88b3fb597c3438e03428ce8fae6b5b54e5f",
+        "passed": true,
+        "commands": [
+          {
+            "command": "cargo clippy -- -D warnings",
+            "success": true,
+            "exit_code": 0
+          },
+          {
+            "command": "cargo test",
+            "success": true,
+            "exit_code": 0
+          },
+          {
+            "command": "bun test",
+            "success": true,
+            "exit_code": 0
+          }
+        ],
+        "requirement_ids": []
+      },
+      "stale_acceptance_input_digest": "47298ce0a3a635ce56141bf99dd1e88b3fb597c3438e03428ce8fae6b5b54e5f",
+      "current_acceptance_input_digest": "5f234e3b6f80f0ca14dba31b8f885a00f912b291e7e9628ddf77b2d4bcff6a8e"
     }
   ]
 }

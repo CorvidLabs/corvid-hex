@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "id": "CHG-0006-use-fledge-native-strict-spec-validation-in-hosted-trust-before-the-specsync-act",
+  "slug": "use-fledge-native-strict-spec-validation-in-hosted-trust-before-the-specsync-act",
+  "title": "Use Fledge-native strict spec validation in hosted Trust before the SpecSync action installs its binary",
+  "description": "Use Fledge-native strict spec validation in hosted Trust before the SpecSync action installs its binary",
+  "kind": "migration",
+  "state": "accepted",
+  "canonical_applied": true,
+  "base_commit": "3c9ef4eb1c03c1bb643206fb9509d0d0c17a03a3",
+  "created_at": 1784015309,
+  "updated_at": 1784015570,
+  "affected_specs": [],
+  "affected_paths": [
+    "fledge.toml",
+    ".specsync/change-sequence.json"
+  ],
+  "no_spec_change": true,
+  "no_spec_change_rationale": "This is a hosted-runner portability correction to Fledge lifecycle orchestration; product behavior, canonical requirements, source, tests, packages, dependencies, and public interfaces remain unchanged.",
+  "acceptance_criteria": [
+    "The Trust-managed Fledge lifecycle runs `fledge spec check --strict` before native checks on clean hosted runners",
+    "the later pinned SpecSync 5.0.1 contract enforces 100 percent coverage",
+    "and exact-head Trust passes with progressive provenance."
+  ],
+  "selected_artifacts": [
+    "context",
+    "research",
+    "design",
+    "plan",
+    "tasks",
+    "testing",
+    "docs"
+  ],
+  "dependencies": [],
+  "answers": {
+    "architecture_risk": "yes",
+    "public_contract": "no"
+  }
+}

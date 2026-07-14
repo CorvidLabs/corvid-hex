@@ -1,5 +1,5 @@
 [tasks]
-spec = "specsync check --strict --force --require-coverage 100"
+spec = "fledge spec check --strict"
 clippy = "cargo clippy -- -D warnings"
 rust-test = "cargo test"
 bun-test = "bun test"

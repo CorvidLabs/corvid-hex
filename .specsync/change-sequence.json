@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "sequence": 5,
-  "id": "CHG-0005-preserve-progressive-provenance-while-making-specsync-warnings-blocking-inside-t",
+  "sequence": 6,
+  "id": "CHG-0006-use-fledge-native-strict-spec-validation-in-hosted-trust-before-the-specsync-act",
   "acknowledged_collisions": []
 }
