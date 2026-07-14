@@ -20,6 +20,13 @@
       "timestamp": 1784015849,
       "digest": "d5b56a74693a557ccd601fa6512bf8c92bfe037e9605be2573098534935349a7",
       "note": "Fresh closing approval after the final Fledge-native hosted portability input passed the full native verification contract; hosted checks remain pending."
+    },
+    {
+      "gate": "acceptance",
+      "actor": "user:0xLeif",
+      "timestamp": 1784016677,
+      "digest": "c3265af7e3da01bb0dadfdcbe30fd47c1de835ff32e3f8449e69bb3be380e95f",
+      "note": "Fresh closing approval after truthful companion completion passed the full native verification contract; hosted checks remain pending."
     }
   ],
   "reopenings": [
@@ -66,6 +73,50 @@
       },
       "stale_acceptance_input_digest": "bd4c582dc343a53a3a42ba0ea4b9454bbad92275ad2529981294bec3a83e50ef",
       "current_acceptance_input_digest": "0f803b23659c8214edbac874b37b2ef628061bb5a1b193a5dd8b2d94b6701f6f"
+    },
+    {
+      "schema_version": 1,
+      "change_id": "CHG-0004-preserve-progressive-provenance-while-making-specsync-warnings-blocking-inside-t",
+      "actor": "user:0xLeif",
+      "reason": "Canonical companion completion changed final delivery inputs after prior acceptance.",
+      "timestamp": 1784016422,
+      "from_state": "accepted",
+      "to_state": "verifying",
+      "superseded_approval": {
+        "gate": "acceptance",
+        "actor": "user:0xLeif",
+        "timestamp": 1784015849,
+        "digest": "d5b56a74693a557ccd601fa6512bf8c92bfe037e9605be2573098534935349a7",
+        "note": "Fresh closing approval after the final Fledge-native hosted portability input passed the full native verification contract; hosted checks remain pending."
+      },
+      "prior_verification": {
+        "timestamp": 1784015849,
+        "commit": "3c9ef4eb1c03c1bb643206fb9509d0d0c17a03a3",
+        "contract_digest": "d67ccf846d8e18ed0741b236ec5e71dfbad084bc3240fb80e64a134804c5a5b2",
+        "workspace_digest": "b9a710431a03c7e9fe5d365a437ee593083982d2f7e1d2783aed8969eaf05a8f",
+        "acceptance_input_digest": "0f803b23659c8214edbac874b37b2ef628061bb5a1b193a5dd8b2d94b6701f6f",
+        "passed": true,
+        "commands": [
+          {
+            "command": "cargo clippy -- -D warnings",
+            "success": true,
+            "exit_code": 0
+          },
+          {
+            "command": "cargo test",
+            "success": true,
+            "exit_code": 0
+          },
+          {
+            "command": "bun test",
+            "success": true,
+            "exit_code": 0
+          }
+        ],
+        "requirement_ids": []
+      },
+      "stale_acceptance_input_digest": "0f803b23659c8214edbac874b37b2ef628061bb5a1b193a5dd8b2d94b6701f6f",
+      "current_acceptance_input_digest": "66753cb2ce344f83fd0614670f73d5ae57ee3dd0829e09a4b47609000bd3267c"
     }
   ]
 }

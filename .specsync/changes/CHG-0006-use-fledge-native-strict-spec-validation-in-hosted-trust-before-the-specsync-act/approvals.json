@@ -13,7 +13,59 @@
       "timestamp": 1784015570,
       "digest": "5d0e0bf9615fe944d6021e7d0e4eb758e17e01c46b03eced2c7b8d033c8abedd",
       "note": "Closing approval follows successful local native verification; exact-head hosted Trust and CI remain required before readiness or merge."
+    },
+    {
+      "gate": "acceptance",
+      "actor": "user:0xLeif",
+      "timestamp": 1784016678,
+      "digest": "d7bf9364f9ab44d532e9ee1d3dac2552dc275ddd8db94268d7b46bd32db8cd6c",
+      "note": "Fresh closing approval after truthful companion completion passed the full native verification contract; hosted checks remain pending."
     }
   ],
-  "reopenings": []
+  "reopenings": [
+    {
+      "schema_version": 1,
+      "change_id": "CHG-0006-use-fledge-native-strict-spec-validation-in-hosted-trust-before-the-specsync-act",
+      "actor": "user:0xLeif",
+      "reason": "Canonical companion completion changed final delivery inputs after prior acceptance.",
+      "timestamp": 1784016422,
+      "from_state": "accepted",
+      "to_state": "verifying",
+      "superseded_approval": {
+        "gate": "acceptance",
+        "actor": "user:0xLeif",
+        "timestamp": 1784015570,
+        "digest": "5d0e0bf9615fe944d6021e7d0e4eb758e17e01c46b03eced2c7b8d033c8abedd",
+        "note": "Closing approval follows successful local native verification; exact-head hosted Trust and CI remain required before readiness or merge."
+      },
+      "prior_verification": {
+        "timestamp": 1784015561,
+        "commit": "3c9ef4eb1c03c1bb643206fb9509d0d0c17a03a3",
+        "contract_digest": "f9aa338545904ce929f4fc4b90147fb44be3f06ae7d1523ab8eed4e932850ee8",
+        "workspace_digest": "b9a710431a03c7e9fe5d365a437ee593083982d2f7e1d2783aed8969eaf05a8f",
+        "acceptance_input_digest": "9efb615f85855a24c3330decf303e08721dfab0d02ca33a78c7f5dac71e1c599",
+        "passed": true,
+        "commands": [
+          {
+            "command": "cargo clippy -- -D warnings",
+            "success": true,
+            "exit_code": 0
+          },
+          {
+            "command": "cargo test",
+            "success": true,
+            "exit_code": 0
+          },
+          {
+            "command": "bun test",
+            "success": true,
+            "exit_code": 0
+          }
+        ],
+        "requirement_ids": []
+      },
+      "stale_acceptance_input_digest": "9efb615f85855a24c3330decf303e08721dfab0d02ca33a78c7f5dac71e1c599",
+      "current_acceptance_input_digest": "3c517c99656d15c67a4b5db29d09f92d6a1e4b2548de5574f433754a83a63c50"
+    }
+  ]
 }

@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "sequence": 6,
-  "id": "CHG-0006-use-fledge-native-strict-spec-validation-in-hosted-trust-before-the-specsync-act",
+  "sequence": 7,
+  "id": "CHG-0007-complete-canonical-test-and-task-companions-required-by-the-hosted-fledge-strict",
   "acknowledged_collisions": []
 }

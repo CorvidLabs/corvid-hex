@@ -1,6 +1,6 @@
 ---
 module: chx
-version: 3
+version: 4
 status: draft
 files:
   - src/main.rs
@@ -135,8 +135,14 @@ Core application module for the `chx` hex editor. Defines the application state 
 | 2026-03-30 | Add Inspector/InspectorEdit modes, inspector state fields, :inspector command |
 | 2026-07-14 | CHG-0003-complete-the-specsync-5-and-trust-1-migration-with-strict-trust-enforcement-com: Complete the SpecSync 5 and Trust 1 migration with strict Trust enforcement, complete governance-path coverage, and stable IDs for every existing requirement companion |
 | 2026-07-14 | CHG-0004-preserve-progressive-provenance-while-making-specsync-warnings-blocking-inside-t: Preserve progressive provenance while making SpecSync warnings blocking inside the unified Trust lifecycle lane |
+| 2026-07-14 | CHG-0007: Document existing native verification in the canonical testing companion |
+| 2026-07-14 | CHG-0007-complete-canonical-test-and-task-companions-required-by-the-hosted-fledge-strict: Complete canonical test and task companions required by the hosted Fledge strict structural gate |
 
 ## Governance
 
 The unified Trust gate runs released SpecSync 5.0.1 in forced strict mode at 100 percent through the configured Fledge lifecycle before native verification. Trust provenance remains progressive until the repository publishes a signed remote attestation ledger. This governance does not alter Corvid Hex product behavior or public interfaces.
+
+## Verification
+
+Native verification evidence for this module is maintained in its testing companion and executed by the unified Trust lifecycle.
 

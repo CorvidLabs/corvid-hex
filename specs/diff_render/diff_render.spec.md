@@ -1,6 +1,6 @@
 ---
 module: diff_render
-version: 2
+version: 3
 status: draft
 files:
   - src/diff_render.rs
@@ -72,3 +72,10 @@ Renders the terminal UI for binary diff mode. Draws a split-pane view with the l
 |------|-------------|
 | 2026-03-30 | Initial spec for diff rendering |
 | 2026-07-14 | CHG-0003-complete-the-specsync-5-and-trust-1-migration-with-strict-trust-enforcement-com: Complete the SpecSync 5 and Trust 1 migration with strict Trust enforcement, complete governance-path coverage, and stable IDs for every existing requirement companion |
+| 2026-07-14 | CHG-0007: Document existing native verification in the canonical testing companion |
+| 2026-07-14 | CHG-0007-complete-canonical-test-and-task-companions-required-by-the-hosted-fledge-strict: Complete canonical test and task companions required by the hosted Fledge strict structural gate |
+
+## Verification
+
+Native verification evidence for this module is maintained in its testing companion and executed by the unified Trust lifecycle.
+

@@ -1,6 +1,6 @@
 ---
 module: input
-version: 2
+version: 3
 status: draft
 files:
   - src/input.rs
@@ -120,3 +120,10 @@ Translates keyboard events into application actions for a terminal hex editor. A
 | 2026-03-30 | Add handle_mouse export for mouse click, drag, and scroll support |
 | 2026-03-30 | Add Inspector and InspectorEdit mode handlers |
 | 2026-07-14 | CHG-0003-complete-the-specsync-5-and-trust-1-migration-with-strict-trust-enforcement-com: Complete the SpecSync 5 and Trust 1 migration with strict Trust enforcement, complete governance-path coverage, and stable IDs for every existing requirement companion |
+| 2026-07-14 | CHG-0007: Document existing native verification in the canonical testing companion |
+| 2026-07-14 | CHG-0007-complete-canonical-test-and-task-companions-required-by-the-hosted-fledge-strict: Complete canonical test and task companions required by the hosted Fledge strict structural gate |
+
+## Verification
+
+Native verification evidence for this module is maintained in its testing companion and executed by the unified Trust lifecycle.
+
