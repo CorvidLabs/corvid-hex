@@ -1,7 +1,7 @@
 ---
 module: chx
 version: 4
-status: draft
+status: active
 files:
   - src/main.rs
   - src/app.rs
@@ -39,7 +39,7 @@ Core application module for the `chx` hex editor. Defines the application state 
 | `execute_command` | `pub fn execute_command(&mut self) -> bool` | Parses and executes the current command input. Returns true if the app should quit. Supports `:q`, `:q!`, `:w`, `:wq`, `:goto`/`:g`, `:s/find/replace`, `:columns`/`:cols`, `:marks`, `:strings`, `:inspector`/`:inspector on`/`:inspector off`. |
 | `offset_from_screen` | `pub fn offset_from_screen(&self, x: u16, y: u16) -> Option<usize>` | Maps terminal (x, y) screen coordinates to a byte offset. Returns `None` if the click is outside the hex view area or beyond the buffer length. Used for mouse click-to-position. |
 | `StringsPanel` | `pub struct StringsPanel` | State for the strings extraction panel. Contains `visible`, `results: Vec<StringEntry>`, `selected`, `scroll`, `min_length`, and `visible_rows` fields. |
-| `new` (StringsPanel) | `pub fn new() -> Self` | Creates a new `StringsPanel` with default values (not visible, empty results, min_length 4). |
+| `new` | `pub fn new() -> Self` | Creates a new `StringsPanel` with default values (not visible, empty results, min_length 4). |
 | `ensure_selected_visible` | `pub fn ensure_selected_visible(&mut self)` | Adjusts `scroll` so the `selected` entry is within the visible viewport of the strings panel. |
 | `StringEntry` | `pub struct StringEntry` | Represents an extracted string with `offset`, `length`, `kind: StringKind`, and `text` fields. |
 | `StringKind` | `pub enum StringKind { Ascii, Utf8, Utf16Le, Utf16Be }` | Classification of an extracted string's encoding. |
