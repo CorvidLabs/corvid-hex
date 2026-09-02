@@ -1,7 +1,7 @@
 ---
 module: format
 version: 3
-status: draft
+status: active
 files:
   - src/format.rs
 db_tables: []

@@ -1,7 +1,7 @@
 ---
 module: entropy
 version: 3
-status: draft
+status: active
 files:
   - src/entropy.rs
 db_tables: []

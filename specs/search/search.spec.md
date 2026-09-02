@@ -1,7 +1,7 @@
 ---
 module: search
 version: 3
-status: draft
+status: active
 files:
   - src/search.rs
 db_tables: []

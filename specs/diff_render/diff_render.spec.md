@@ -1,7 +1,7 @@
 ---
 module: diff_render
 version: 3
-status: draft
+status: active
 files:
   - src/diff_render.rs
 db_tables: []

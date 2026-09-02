@@ -1,7 +1,7 @@
 ---
 module: input
 version: 3
-status: draft
+status: active
 files:
   - src/input.rs
 db_tables: []

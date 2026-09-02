@@ -1,7 +1,7 @@
 ---
 module: render
 version: 3
-status: draft
+status: active
 files:
   - src/render.rs
 db_tables: []

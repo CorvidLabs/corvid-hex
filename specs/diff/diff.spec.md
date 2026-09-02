@@ -1,7 +1,7 @@
 ---
 module: diff
 version: 3
-status: draft
+status: active
 files:
   - src/diff.rs
 db_tables: []

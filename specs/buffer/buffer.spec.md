@@ -1,7 +1,7 @@
 ---
 module: buffer
 version: 3
-status: draft
+status: active
 files:
   - src/buffer.rs
   - src/lib.rs

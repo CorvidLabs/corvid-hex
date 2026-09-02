@@ -1,7 +1,7 @@
 ---
 module: inspector
 version: 3
-status: draft
+status: active
 files:
   - src/inspector.rs
 db_tables: []
